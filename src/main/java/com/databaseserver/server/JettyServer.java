@@ -9,6 +9,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 // Native classes.
 import com.databaseserver.server.helpers.ValidationUtilities;
 import com.databaseserver.server.helpers.RoutingUtilities;
+import com.databaseserver.server.helpers.HTMLFileServer;
 
 public class JettyServer extends AbstractHandler {
   String correctPassword = "";
@@ -39,12 +40,28 @@ public class JettyServer extends AbstractHandler {
 
     // We received an authorized request and can continue with normal operation.
     response.setStatus(HttpServletResponse.SC_OK);
+    
+    String preparedHTMLFile = HTMLFileServer.prepareResponseString("index2.html");
 
     // Write back response
-    response.getWriter().println("<h1>Hello Chris!</h1>");
+    response.getWriter().println(preparedHTMLFile);
 
     // Inform jetty that this request has now been handled.
     baseRequest.setHandled(true);
     return;
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
