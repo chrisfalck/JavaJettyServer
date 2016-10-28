@@ -1,6 +1,108 @@
-<h1>
-  Test page
-</h1>
-<p>
-  This is a test of static file serving. 
-</P>
+<!DOCTYPE html>
+<html lang="en-US">
+
+<!-- Angular Material icons -->
+<link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.css">
+
+<!-- Angular Material requires Angular.js Libraries -->
+<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-animate.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-aria.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-messages.min.js"></script>
+
+<!-- Angular Material Library -->
+<script src="http://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.js"></script>
+
+<!-- Styles -->
+<head>
+	<style type="text/css">
+		.center {
+			text-align: center;
+		}	
+		.area1, .area2 {
+			display:flex;
+			box-sizing: border-box;
+			min-width:100%;
+		}
+		.area1 {
+			height:30%;
+			max-height:30%;
+			flex:1 1 30%;
+		}
+		.area2 {
+			max-height:70%;
+			flex:1 1 70%;
+		}
+		div {
+			border: 1px darkblue;
+			border-style: none none solid none;
+		}
+		.margin-left {
+			margin-left: 3%;
+		}
+	</style>
+</head>
+
+<body ng-app="databasesApp" ng-controller="IndexController" ng-cloak layout="column">
+
+
+
+
+
+	<!-- Visible page content -->
+	<md-toolbar layout="row" layout-align="center center">
+		<h3 class="center">Intro to Databases Fall 2016: Seattle Crime Database Analysis</h3>
+	</md-toolbar>
+
+	<div flex layout="row">
+		<div layout="column" flex>
+			<div class="area1">
+				<!-- Make sure to wrap normal content in a md-content tag! -->
+				<md-content class="margin-left">
+					<h1>Options</h1>
+					<span>Analyze data by:</span>
+					<select ng-options="viewType for viewType in viewOptions"
+							ng-model="selectedView" ng-change="applyViewChange()">
+					</select>
+				</md-content>
+			</div>
+			<div class="area2">
+
+				<div ng-show="selectedView === 'Frequency'">
+					<md-content>
+						<span>Frequency</span>
+					</md-content>
+				</div>
+
+				<div ng-show="selectedView === 'Specific Crime'">
+					<md-content>
+						<span>Specific Crime</span>
+					</md-content>
+				</div>
+
+			</div>
+		</div>
+	</div>
+
+
+
+
+
+
+
+	<!-- Angular controller setup. -->
+	<script>
+		var app = angular.module('databasesApp', ['ngMaterial']);
+		app.controller('IndexController', ['$scope', function($scope) {
+
+			$scope.viewOptions = ['Frequency', 'Specific Crime'];
+
+			$scope.applyViewChange = function() {
+				console.log($scope.selectedView + ' selected.');
+			};
+
+		}]);
+	</script>
+
+</body>
+</html>

@@ -41,7 +41,11 @@ public class JettyServer extends AbstractHandler {
     // We received an authorized request and can continue with normal operation.
     response.setStatus(HttpServletResponse.SC_OK);
     
-    String preparedHTMLFile = HTMLFileServer.prepareResponseString("index2.html");
+    
+    
+    
+    
+    String preparedHTMLFile = HTMLFileServer.prepareResponseString("index.html");
 
     // Write back response
     response.getWriter().println(preparedHTMLFile);
