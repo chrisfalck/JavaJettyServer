@@ -25,20 +25,39 @@
 			min-width:100%;
 		}
 		.area1 {
-			height:30%;
-			max-height:30%;
-			flex:1 1 30%;
-		}
-		.area2 {
-			max-height:70%;
-			flex:1 1 70%;
-		}
-		div {
+			height:5%;
+			max-height:5%;
+			width: 100%;
+			min-width: 100%;
+			flex:1 1 10%;
 			border: 1px darkblue;
 			border-style: none none solid none;
 		}
+		.area2 {
+			height: 95%;
+			max-height:95%;
+			width: 100%;
+			min-width: 100%;
+			flex: 1 1 100%;
+			border: 1px darkblue;
+			border-style: none none solid none;
+		}
+		.left {
+			float: left;
+			width: 100%;
+			text-align: left;
+			margin: 2px 10px;
+			display: inline;
+		}
+
+		.right {
+			float: right;
+			text-align: right;
+			margin: 2px 10px;
+			display: inline;
+		}
 		.margin-left {
-			margin-left: 3%;
+			margin-left: 50px;
 		}
 	</style>
 </head>
@@ -57,9 +76,8 @@
 	<div flex layout="row">
 		<div layout="column" flex>
 			<div class="area1">
-				<!-- Make sure to wrap normal content in a md-content tag! -->
+				<!-- Make sure to wrap normal content in an md-content tag! -->
 				<md-content class="margin-left">
-					<h1>Options</h1>
 					<span>Analyze data by:</span>
 					<select ng-options="viewType for viewType in viewOptions"
 							ng-model="selectedView" ng-change="applyViewChange()">
@@ -68,9 +86,22 @@
 			</div>
 			<div class="area2">
 
-				<div ng-show="selectedView === 'Frequency'">
-					<md-content>
-						<span>Frequency</span>
+				<div ng-show="selectedView === 'Frequency'" style="width: 60%;">
+					<md-button class="md-raised md-primary" ng-click="applyChanges()">Apply Changes</md-button>
+					<md-content class="margin-left" style="width: 100%; overflow: visible;">
+						<h3>Select Date Range</h3>
+						<div class="right margin-left">
+							<md-radio-group ng-model="frequencyView.sortOrder">
+								<md-radio-button value="Most Frequent First">Most Frequent First </md-radio-button>
+								<md-radio-button value="Least Frequent First"> Least Frequent First </md-radio-button>
+							</md-radio-group>
+						</div>
+						<form>
+							From: 
+							<input type="date" ng-model="frequencyView.fromDate">								
+							To:
+							<input type="date" ng-model="frequencyView.toDate">								
+						</form>
 					</md-content>
 				</div>
 
@@ -93,11 +124,95 @@
 	<!-- Angular controller setup. -->
 	<script>
 		var app = angular.module('databasesApp', ['ngMaterial']);
-		app.controller('IndexController', ['$scope', function($scope) {
+		app.controller('IndexController', ['$scope', '$http', function($scope, $http) {
 
+			// The two types of views we offer.
 			$scope.viewOptions = ['Frequency', 'Specific Crime'];
 
-			$scope.applyViewChange = function() {
+			// Default the view to frequency on initial page load.
+			$scope.selectedView = $scope.viewOptions[0];
+
+			// Values for the state of the frequency view.
+			$scope.frequencyView = {
+				sortOrder: 'Most Frequent First',
+				fromDate: null,
+				toDate: null,
+				locations: []
+			};
+
+			function validateQueryOptions() {
+				if ($scope.selectedView === $scope.viewOptions[0]) {
+					if ($scope.frequencyView.sortOrder !== ('Most Frequent First' || 'Least Frequent First')) {
+						return false;
+					}
+					if ($scope.frequencyView.fromDate === null  || $scope.frequencyView.toDate === null) {
+						return false;
+					}
+					return true;
+				}
+			};
+
+			function getParameterByName(name, url) {
+				if (!url) {
+					url = window.location.href;
+				}
+				name = name.replace(/[\[\]]/g, "\\$&");
+				var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+				results = regex.exec(url);
+				if (!results) return null;
+				if (!results[2]) return '';
+				return decodeURIComponent(results[2].replace(/\+/g, " "));
+			};
+
+			$scope.applyChanges = () => {
+
+				// Validate all fields.
+				if (!validateQueryOptions()) {
+					alert('Query options are invalid.');
+					return;
+				}
+
+				// Build http request body differently depending on the view we have open.
+				let requestBody = {
+					queryType: $scope.selectedView
+				};
+
+				// Frequency view.
+				if ($scope.selectedView === $scope.viewOptions[0]) {
+					requestBody.serverUrl = 'localhost:8080/?password=' + getParameterByName('password') + '&databaseQuery=frequency';
+					requestBody.sortOrder = $scope.frequencyView.sortOrder;
+					requestBody.fromDate = $scope.frequencyView.fromDate;
+					requestBody.toDate = $scope.frequencyView.toDate;
+				}
+
+				// Specific crime view.
+				if ($scope.selectedView === $scope.viewOptions[1]) {
+					requestBody.serverUrl = 'localhost:8080/?password=' + getParameterByName('password') + '&databaseQuery=specific';
+					// Specific crime http body config.
+				}
+
+				console.log(requestBody);
+
+				// $http.post(requestBody.serverUrl, requestBody).then(postSuccess, postFailure);
+
+				function postSuccess(response) {
+					console.log('Success: ' + JSON.stringify(response));
+					// Populate page with response data.
+				};
+
+				function postFailure(response) {
+					console.log('Failure: ' + JSON.stringify(response));
+				};
+
+			};
+
+			// Called when a date range changes.
+			$scope.applyDateChange = () => {
+				console.log('Date now: ' + $scope.frequencyView.fromDate + ' to ' + $scope.frequencyView.toDate);
+			};
+
+			// Called when the view type changes.
+			$scope.applyViewChange = () => {
 				console.log($scope.selectedView + ' selected.');
 			};
 
