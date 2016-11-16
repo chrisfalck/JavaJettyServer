@@ -14,7 +14,7 @@ public class QueryExecution {
     static Statement statement;
     public QueryExecution() {
         try {
-            Class.forName("com.databaseserver.server.helpers.oracle.jdbc.driver.OracleDriver");
+            Class.forName("oracle.jdbc.driver.OracleDriver");
         } catch(Exception e) {
             System.out.println(e);
         }
