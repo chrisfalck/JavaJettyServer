@@ -10,6 +10,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import com.databaseserver.server.helpers.ValidationUtilities;
 import com.databaseserver.server.helpers.RoutingUtilities;
 import com.databaseserver.server.helpers.HTMLFileServer;
+import com.databaseserver.server.helpers.QueryExecution;
 
 public class JettyServer extends AbstractHandler {
   String correctPassword = "";
@@ -34,20 +35,23 @@ public class JettyServer extends AbstractHandler {
 
     boolean passwordIsNotValid = !ValidationUtilities.validatePassword(baseRequest, request, response, correctPassword);
     if (passwordIsNotValid) return;
-    
+
     boolean queryHandlersSentResponse = RoutingUtilities.handleURL(baseRequest, request, response);
     if (queryHandlersSentResponse) return;
+
+    QueryExecution.openConnection();
+    QueryExecution.closeConnection();
 
     // Declare response encoding and types.
     response.setContentType("text/html; charset=utf-8");
 
     // We received an authorized request and can continue with normal operation.
     response.setStatus(HttpServletResponse.SC_OK);
-    
-    
-    
-    
-    
+
+
+
+
+
     String preparedHTMLFile = HTMLFileServer.prepareResponseString("index.html");
 
     // Write back response
@@ -58,17 +62,3 @@ public class JettyServer extends AbstractHandler {
     return;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
