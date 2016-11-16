@@ -1,6 +1,7 @@
 package com.databaseserver.server.helpers;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -54,8 +55,9 @@ public final class RoutingUtilities
 		while ((line = reader.readLine()) != null) {
 			buffer.append(line);
 		}
-		String data = buffer.toString();		
-		return false; 
+		String data = buffer.toString();	
+		System.out.println(data);
+		return true; 
 	}
 
 	private static boolean handleSpecificQuery(Request baseRequest, HttpServletRequest request, HttpServletResponse response) {
@@ -63,13 +65,18 @@ public final class RoutingUtilities
 	}
 
 	public static boolean handleURL(Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
-		String[] queryStringValues = request.getQueryString().split("=");
-		for (int i = 0; i < queryStringValues.length; i += 2) {
-			if (queryStringValues[i] == null || queryStringValues[i + 1] == null) continue;
-			if (queryStringValues[i].equals("databaseQuery")) {
-				if (queryStringValues[i + 1].equals("frequency")) {
+		String[] queryKeysSeparatePairs = request.getQueryString().split("&");
+		ArrayList<String> queryKeysAndValues = new ArrayList<String>();
+		for (String str : queryKeysSeparatePairs) {
+			queryKeysAndValues.add(str.split("=")[0]);
+			queryKeysAndValues.add(str.split("=")[1]);
+		}
+		for (int i = 0; i < queryKeysAndValues.size(); i += 2) {
+			if (queryKeysAndValues.get(i) == null || queryKeysAndValues.get(i + 1) == null) continue;
+			if (queryKeysAndValues.get(i).equals("databaseQuery")) {
+				if (queryKeysAndValues.get(i + 1).equals("frequency")) {
 					return handleFrequencyQuery(baseRequest, request, response);
-				} else if (queryStringValues[i + 1].equals("specific")) {
+				} else if (queryKeysAndValues.get(i + 1).equals("specific")) {
 					return handleSpecificQuery(baseRequest, request, response);
 				}
 			}

@@ -1,5 +1,7 @@
 package com.databaseserver.server.helpers;
 import java.io.IOException;
+import java.util.ArrayList;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
@@ -36,17 +38,21 @@ public final class ValidationUtilities
   public static boolean validatePassword(Request baseRequest, HttpServletRequest request, HttpServletResponse response, String correctPassword) throws IOException
   {
 	String[] queryKeysSeparatePairs = request.getQueryString().split("&");
-    String[] queryKeysAndValues = request.getQueryString().split("=");
+    ArrayList<String> queryKeysAndValues = new ArrayList<String>();
+    for (String str : queryKeysSeparatePairs) {
+    	queryKeysAndValues.add(str.split("=")[0]);
+    	queryKeysAndValues.add(str.split("=")[1]);
+	}
     // Check query string for correct password.
-    for (int i = 0; i < queryKeysAndValues.length - 1; i += 2)
+    for (int i = 0; i < queryKeysAndValues.size() - 1; i += 2)
     {
-      if (queryKeysAndValues[i].equals("password") && queryKeysAndValues[i + 1] != null && queryKeysAndValues[i + 1].equals(correctPassword))
+      if (queryKeysAndValues.get(i).equals("password") && queryKeysAndValues.get(i + 1) != null && queryKeysAndValues.get(i + 1).equals(correctPassword))
       {
         return true;
       }
     }
 
-    System.out.println("Password incorrect: " + queryKeysAndValues[0] + queryKeysAndValues[1]);
+    System.out.println("Password incorrect: " + queryKeysAndValues.toArray().toString());
     // If we made it here, we didn't find a valid password.
     RoutingUtilities.sendUnauthorized(baseRequest, response);
     return false;
