@@ -1,12 +1,15 @@
 package com.databaseserver.server.helpers;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.sql.Array;
 import java.util.ArrayList;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.server.Request;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public final class RoutingUtilities
 {
@@ -18,6 +21,13 @@ public final class RoutingUtilities
 		System.out.println("Indicating server error.");
 		response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		response.getWriter().println("<h1>Internal Server Error</h1>");
+		baseRequest.setHandled(true);
+		return;
+	}
+	
+	public static void sendOK(Request baseRequest, HttpServletResponse response, String optionalData) throws IOException {
+		response.setStatus(HttpServletResponse.SC_OK);
+		if (optionalData != null) response.getWriter().println(optionalData);
 		baseRequest.setHandled(true);
 		return;
 	}
@@ -47,7 +57,7 @@ public final class RoutingUtilities
 		return true;
 	}
 
-	private static boolean handleFrequencyQuery(Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
+	private static boolean handleFrequencyQuery(Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, JSONException {
 		// Read from request
 		StringBuilder buffer = new StringBuilder();
 		BufferedReader reader = request.getReader();
@@ -56,7 +66,32 @@ public final class RoutingUtilities
 			buffer.append(line);
 		}
 		String data = buffer.toString();	
-		System.out.println(data);
+		
+		JSONObject requestBody = new JSONObject(data);
+		String sortOrder = requestBody.getString("sortOrder");
+		String fromDate = requestBody.getString("fromDate");
+		String toDate = requestBody.getString("toDate");
+		
+		QueryExecution.openConnection();
+		ArrayList<JSONObject> results = QueryExecution.queryByFrequency(fromDate.split("T")[0], toDate.split("T")[0], sortOrder);
+		QueryExecution.closeConnection();
+		
+		String finalResultString = "[";
+		
+		for (JSONObject myJsonObject : results) {
+			finalResultString += myJsonObject.toString() + ",";
+		}
+		
+		System.out.println(finalResultString);
+		
+		int indexOfLastComma = finalResultString.lastIndexOf(",");
+		
+		String noLastComma = finalResultString.substring(0, indexOfLastComma);
+		
+		noLastComma += "]";
+		
+		System.out.println("Frequency request with params:\n" + sortOrder + "\n" + fromDate + "\n" + toDate + "\n");
+		sendOK(baseRequest, response, noLastComma);
 		return true; 
 	}
 
@@ -64,7 +99,7 @@ public final class RoutingUtilities
 		return false;
 	}
 
-	public static boolean handleURL(Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
+	public static boolean handleURL(Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, JSONException {
 		String[] queryKeysSeparatePairs = request.getQueryString().split("&");
 		ArrayList<String> queryKeysAndValues = new ArrayList<String>();
 		for (String str : queryKeysSeparatePairs) {

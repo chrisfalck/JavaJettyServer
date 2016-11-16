@@ -6,7 +6,12 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.sql.*;
+import java.text.Normalizer.Form;
 import java.util.*;
+
+import javax.print.attribute.ResolutionSyntax;
+
+import org.json.JSONObject;
 
 public class QueryExecution {
     // Oracle stuff.
@@ -24,11 +29,56 @@ public class QueryExecution {
     public static void openConnection() {
         try {
             connection = DriverManager.getConnection(
-                "jdbc:oracle:thin:@localhost:1521:xe", "system", "password");
+                "jdbc:oracle:thin:@localhost:1521:xe", "system", "admin");
             statement = connection.createStatement();
+            System.out.println("Oracle database connection instantiated.");
         } catch(Exception e) {
             System.out.println(e);
         }
+    }
+    
+    public static ArrayList<JSONObject> queryByFrequency(String fromDate, String toDate, String sortOrder) {
+    	
+        try {
+            String order = "";
+            if(sortOrder.equals("Most Frequent First")) {
+                order = "desc";
+            } else {
+                order = "asc";
+            }
+            String select = "event_code, event_clearance_description, group_name, count(event_code) as num";
+            String tables = "Incident, Type, CrimeTime";
+            String conditions = "event_code = event_clearance_code and general_offense_number = offense_number and Crime_Date > To_Date('" + fromDate + "', 'YYYY-MM-DD') and Crime_Date < To_Date('" + toDate + "', 'YYYY-MM-DD')";
+            String groupBy = "event_code, event_clearance_description, group_name";
+
+            ResultSet rs = statement.executeQuery("select " + 
+            select + " from " + tables + " where " + conditions + " group by " + 
+            		groupBy + " order by count(event_code) " + order);
+
+            ArrayList<JSONObject> queryResults = new ArrayList<JSONObject>();
+            while(rs.next()) {
+            	JSONObject currentResult = new JSONObject();
+            	currentResult.append("event_code", rs.getInt("event_code"));
+            	currentResult.append("event_clearance_description", rs.getString("event_clearance_description"));
+            	currentResult.append("group_name", rs.getString("group_name"));
+            	currentResult.append("num", rs.getInt("num"));
+            	queryResults.add(currentResult);
+                System.out.println(rs.getInt("event_code") + " ---- " + rs.getString("event_clearance_description") + " ---- " + rs.getString("group_name") + " ---- " + rs.getInt("num"));
+            }
+            
+            
+            return queryResults;
+        } catch(Exception e) {
+            System.out.println(e);
+            System.out.println(e.getStackTrace());
+        }
+        
+        return null;
+    }
+    
+    public static String executeQuery() {
+
+    	return null;
     }
 
     // Always call this when done to close the connection to the database.

@@ -5,6 +5,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.json.JSONException;
 
 // Native classes.
 import com.databaseserver.server.helpers.ValidationUtilities;
@@ -36,8 +37,13 @@ public class JettyServer extends AbstractHandler {
     boolean passwordIsNotValid = !ValidationUtilities.validatePassword(baseRequest, request, response, correctPassword);
     if (passwordIsNotValid) return;
 
-    boolean queryHandlersSentResponse = RoutingUtilities.handleURL(baseRequest, request, response);
-    if (queryHandlersSentResponse) return;
+    boolean queryHandlersSentResponse;
+	try {
+		queryHandlersSentResponse = RoutingUtilities.handleURL(baseRequest, request, response);
+		if (queryHandlersSentResponse) return;
+	} catch (JSONException e) {
+		e.printStackTrace();
+	}
 
     QueryExecution.openConnection();
     QueryExecution.closeConnection();

@@ -179,7 +179,7 @@
 
 				// Frequency view.
 				if ($scope.selectedView === $scope.viewOptions[0]) {
-					serverUrl = 'http://lvh.me:9090/?password=' + getParameterByName('password') + '&databaseQuery=frequency';
+					serverUrl = 'http://localhost:9090/?password=' + getParameterByName('password') + '&databaseQuery=frequency';
 					requestBody.sortOrder = $scope.frequencyView.sortOrder;
 					requestBody.fromDate = $scope.frequencyView.fromDate;
 					requestBody.toDate = $scope.frequencyView.toDate;
@@ -187,7 +187,7 @@
 
 				// Specific crime view.
 				if ($scope.selectedView === $scope.viewOptions[1]) {
-					serverUrl = 'http://lvh.me:9090/?password=' + getParameterByName('password') + '&databaseQuery=specific';
+					serverUrl = 'http://localhost:9090/?password=' + getParameterByName('password') + '&databaseQuery=specific';
 					// Specific crime http body config.
 				}
 
