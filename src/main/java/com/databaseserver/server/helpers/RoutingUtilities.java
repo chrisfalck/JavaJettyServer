@@ -1,4 +1,5 @@
 package com.databaseserver.server.helpers;
+import java.io.BufferedReader;
 import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
@@ -46,8 +47,14 @@ public final class RoutingUtilities
 	}
 
 	private static boolean handleFrequencyQuery(Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
-		String body = request.getReader().lines().reduce("", (accumulator, actual) -> accumulator + actual);
-		System.out.println(body);
+		// Read from request
+		StringBuilder buffer = new StringBuilder();
+		BufferedReader reader = request.getReader();
+		String line;
+		while ((line = reader.readLine()) != null) {
+			buffer.append(line);
+		}
+		String data = buffer.toString();		
 		return false; 
 	}
 
