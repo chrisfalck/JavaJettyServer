@@ -15,6 +15,9 @@
 
 <!-- Styles -->
 <head>
+    <title>
+        Seattle Crime Analysis
+    </title>
 	<style type="text/css">
 		.center {
 			text-align: center;
@@ -43,15 +46,12 @@
 			border-style: none none solid none;
 		}
 		.left {
-			float: left;
-			width: 100%;
 			text-align: left;
 			margin: 2px 10px;
 			display: inline;
 		}
 
 		.right {
-			float: right;
 			text-align: right;
 			margin: 2px 10px;
 			display: inline;
@@ -63,10 +63,6 @@
 </head>
 
 <body ng-app="databasesApp" ng-controller="IndexController" ng-cloak layout="column">
-
-
-
-
 
 	<!-- Visible page content -->
 	<md-toolbar layout="row" layout-align="center center">
@@ -86,6 +82,7 @@
 			</div>
 			<div class="area2">
 
+                <!-- View crime statistics by frequency view. -->
 				<div ng-show="selectedView === 'Frequency'" style="width: 60%;">
 					<md-button class="md-raised md-primary" ng-click="applyChanges()">Apply Changes</md-button>
 					<md-content class="margin-left" style="width: 100%; overflow: visible;">
@@ -105,6 +102,7 @@
 					</md-content>
 				</div>
 
+                <!-- View crime statistics for a specific crime. -->
 				<div ng-show="selectedView === 'Specific Crime'">
 					<md-content>
 						<span>Specific Crime</span>
@@ -177,9 +175,11 @@
 					queryType: $scope.selectedView
 				};
 
+                let serverUrl = ''
+
 				// Frequency view.
 				if ($scope.selectedView === $scope.viewOptions[0]) {
-					requestBody.serverUrl = 'localhost:8080/?password=' + getParameterByName('password') + '&databaseQuery=frequency';
+					serverUrl = 'http://lvh.me:9090/?password=' + getParameterByName('password') + '&databaseQuery=frequency';
 					requestBody.sortOrder = $scope.frequencyView.sortOrder;
 					requestBody.fromDate = $scope.frequencyView.fromDate;
 					requestBody.toDate = $scope.frequencyView.toDate;
@@ -187,13 +187,13 @@
 
 				// Specific crime view.
 				if ($scope.selectedView === $scope.viewOptions[1]) {
-					requestBody.serverUrl = 'localhost:8080/?password=' + getParameterByName('password') + '&databaseQuery=specific';
+					serverUrl = 'http://lvh.me:9090/?password=' + getParameterByName('password') + '&databaseQuery=specific';
 					// Specific crime http body config.
 				}
 
 				console.log(requestBody);
 
-				// $http.post(requestBody.serverUrl, requestBody).then(postSuccess, postFailure);
+				$http.post(serverUrl, requestBody).then(postSuccess, postFailure);
 
 				function postSuccess(response) {
 					console.log('Success: ' + JSON.stringify(response));

@@ -16,7 +16,7 @@ public class Main {
 		}
 
 		// Create a new server on port 8080.
-		Server server = new Server(8080);
+		Server server = new Server(9090);
 
 		// Pass our JettyServer handler as this server's handler.
 		server.setHandler(new JettyServer(passwordToUse));

@@ -35,9 +35,10 @@ public final class ValidationUtilities
   // Check for password validity and return true if valid.
   public static boolean validatePassword(Request baseRequest, HttpServletRequest request, HttpServletResponse response, String correctPassword) throws IOException
   {
+	String[] queryKeysSeparatePairs = request.getQueryString().split("&");
     String[] queryKeysAndValues = request.getQueryString().split("=");
     // Check query string for correct password.
-    for (int i = 0; i < queryKeysAndValues.length - 1; ++i)
+    for (int i = 0; i < queryKeysAndValues.length - 1; i += 2)
     {
       if (queryKeysAndValues[i].equals("password") && queryKeysAndValues[i + 1] != null && queryKeysAndValues[i + 1].equals(correctPassword))
       {
@@ -45,6 +46,7 @@ public final class ValidationUtilities
       }
     }
 
+    System.out.println("Password incorrect: " + queryKeysAndValues[0] + queryKeysAndValues[1]);
     // If we made it here, we didn't find a valid password.
     RoutingUtilities.sendUnauthorized(baseRequest, response);
     return false;

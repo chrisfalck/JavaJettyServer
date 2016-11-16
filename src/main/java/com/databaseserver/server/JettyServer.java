@@ -34,6 +34,9 @@ public class JettyServer extends AbstractHandler {
 
     boolean passwordIsNotValid = !ValidationUtilities.validatePassword(baseRequest, request, response, correctPassword);
     if (passwordIsNotValid) return;
+    
+    boolean queryHandlersSentResponse = RoutingUtilities.handleURL(baseRequest, request, response);
+    if (queryHandlersSentResponse) return;
 
     // Declare response encoding and types.
     response.setContentType("text/html; charset=utf-8");
