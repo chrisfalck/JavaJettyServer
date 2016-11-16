@@ -120,10 +120,10 @@
                             </thead>
                             <tbody>
                                 <tr ng-repeat="entry in data" class="table-data">
-                                    <td>{{entry.eventClearanceCode}}</td>
-                                    <td>{{entry.eventClearanceDescription}}</td>
-                                    <td>{{entry.eventClearanceGroup}}</td>
-                                    <td>{{entry.numberOfIncidents}}</td>
+                                    <td>{{entry.event_code[0]}}</td>
+                                    <td>{{entry.event_clearance_description[0]}}</td>
+                                    <td>{{entry.group_name[0]}}</td>
+                                    <td>{{entry.num[0]}}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -189,7 +189,8 @@
 
 			function validateQueryOptions() {
 				if ($scope.selectedView === $scope.viewOptions[0]) {
-					if ($scope.frequencyView.sortOrder !== ('Most Frequent First' || 'Least Frequent First')) {
+                    console.log($scope.frequencyView);
+					if ($scope.frequencyView.sortOrder !== 'Most Frequent First' && $scope.frequencyView.sortOrder !== 'Least Frequent First') {
 						return false;
 					}
 					if ($scope.frequencyView.fromDate === null  || $scope.frequencyView.toDate === null) {
@@ -245,7 +246,9 @@
 				$http.post(serverUrl, requestBody).then(postSuccess, postFailure);
 
 				function postSuccess(response) {
-					console.log('Success: ' + JSON.stringify(response));
+                    var dataJSON = response.data;
+                    console.log(dataJSON);
+                    $scope.data = dataJSON;
 					// Populate page with response data.
 				};
 
