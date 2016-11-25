@@ -51,9 +51,10 @@ public class QueryExecution {
             String conditions = "event_code = event_clearance_code and general_offense_number = offense_number and Crime_Date > To_Date('" + fromDate + "', 'YYYY-MM-DD') and Crime_Date < To_Date('" + toDate + "', 'YYYY-MM-DD')";
             String groupBy = "event_code, event_clearance_description, group_name";
 
-            ResultSet rs = statement.executeQuery("select " + 
-            select + " from " + tables + " where " + conditions + " group by " + 
-            		groupBy + " order by count(event_code) " + order);
+            ResultSet rs = statement.executeQuery("select " + select +
+            		" from " + tables + 
+            		" where " + conditions + 
+            		" group by " + groupBy + " order by count(event_code) " + order);
 
             ArrayList<JSONObject> queryResults = new ArrayList<JSONObject>();
             while(rs.next()) {
@@ -65,7 +66,6 @@ public class QueryExecution {
             	queryResults.add(currentResult);
                 System.out.println(rs.getInt("event_code") + " ---- " + rs.getString("event_clearance_description") + " ---- " + rs.getString("group_name") + " ---- " + rs.getInt("num"));
             }
-            
             
             return queryResults;
         } catch(Exception e) {

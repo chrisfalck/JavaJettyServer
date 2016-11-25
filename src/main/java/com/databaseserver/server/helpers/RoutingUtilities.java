@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.server.Request;
+import org.json.HTTPTokener;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -56,8 +57,8 @@ public final class RoutingUtilities
 		}
 		return true;
 	}
-
-	private static boolean handleFrequencyQuery(Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, JSONException {
+	
+	private static JSONObject getBodyAsJSON(HttpServletRequest request) throws IOException, JSONException {
 		// Read from request
 		StringBuilder buffer = new StringBuilder();
 		BufferedReader reader = request.getReader();
@@ -67,7 +68,12 @@ public final class RoutingUtilities
 		}
 		String data = buffer.toString();	
 		
-		JSONObject requestBody = new JSONObject(data);
+		return new JSONObject(data);
+	}
+
+	private static boolean handleFrequencyQuery(Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, JSONException {
+		
+		JSONObject requestBody = getBodyAsJSON(request);
 		String sortOrder = requestBody.getString("sortOrder");
 		String fromDate = requestBody.getString("fromDate");
 		String toDate = requestBody.getString("toDate");
