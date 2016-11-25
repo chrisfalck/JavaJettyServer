@@ -45,9 +45,6 @@ public class JettyServer extends AbstractHandler {
 		e.printStackTrace();
 	}
 
-    QueryExecution.openConnection();
-    QueryExecution.closeConnection();
-
     // Declare response encoding and types.
     response.setContentType("text/html; charset=utf-8");
 

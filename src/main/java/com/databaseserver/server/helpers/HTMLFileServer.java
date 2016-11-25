@@ -13,7 +13,7 @@ public final class HTMLFileServer
 	{
 		
 		// Path separator dependent. 
-		String systemDependentPathToStaticFiles = "C:/Users/Chris/git/JavaJettyServer/static_files/" + fileName;
+		String systemDependentPathToStaticFiles = "/home/ryan/git/JavaJettyServer/static_files/" + fileName;
 		
 		// Path separator independent. 
 		// Rebuild the string with the system's path separator. 
