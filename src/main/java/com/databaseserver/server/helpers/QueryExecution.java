@@ -37,6 +37,30 @@ public class QueryExecution {
         }
     }
     
+    public static ArrayList<JSONObject> querySpecific(String fromDate, String toDate) {
+    	
+    	try {
+    		ResultSet rs = statement.executeQuery("select * from Incident, CrimeTime where General_Offense_Number = Offense_Number and Crime_Date > To_Date('" + fromDate + "', 'YYYY-MM-DD') and Crime_Date < To_Date('" + toDate + "', 'YYYY-MM-DD')");
+    		ArrayList<JSONObject> queryResults = new ArrayList<JSONObject>();
+    		while(rs.next()) {
+    			JSONObject currentResult = new JSONObject();
+    			currentResult.append("general_offense_number", rs.getInt("general_offense_number"));
+    			currentResult.append("event_code", rs.getInt("event_Code"));
+    			currentResult.append("addr", rs.getString("addr"));
+    			currentResult.append("crime_date", rs.getDate("crime_date"));
+    			currentResult.append("time", rs.getString("time"));
+    			queryResults.add(currentResult);
+    		}
+    		
+    		return queryResults;
+    	} catch(Exception e) {
+    		System.out.println(e);
+    		System.out.println(e.getStackTrace());
+    	}
+    	
+    	return null;
+    }
+    
     public static ArrayList<JSONObject> queryByFrequency(String fromDate, String toDate, String sortOrder) {
     	
         try {

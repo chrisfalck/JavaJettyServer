@@ -132,8 +132,39 @@
 
                 <!-- View crime statistics for a specific crime. -->
 				<div ng-show="selectedView === 'Specific Crime'">
-					<md-content>
-						<span>Specific Crime</span>
+					<md-button class="md-raised md-primary" ng-click="applyChanges()">Apply Changes</md-button>
+					<md-content class="margin-left" style="width: 1000px; overflow: visible;">
+						<h3>Select Date Range</h3>
+						<div class="margin-left">
+    						<form class="right">
+    							From:
+    							<input type="date" ng-model="specificView.fromDate">
+    							To:
+    							<input type="date" ng-model="specificView.toDate">
+    						</form>
+                        </div>
+                        <div class="data">
+	                        <table border="1">
+	                            <thead>
+	                                <tr>
+	                                    <th>General Offense Number</th>
+	                                    <th>Event Code</th>
+	                                    <th>Address</th>
+	                                    <th>Date</th>
+	                                    <th>Time</th>
+	                                </tr>
+	                            </thead>
+	                            <tbody>
+	                                <tr ng-repeat="entry in data" class="table-data">
+	                                	<td>{{entry.general_offense_number[0]}}</td>
+	                                    <td>{{entry.event_code[0]}}</td>
+	                                    <td>{{entry.addr[0]}}</td>
+	                                    <td>{{entry.crime_date[0]}}</td>
+	                                    <td>{{entry.time[0]}}</td>
+	                                </tr>
+	                            </tbody>
+	                        </table>
+                    </div>
 					</md-content>
 				</div>
 
@@ -164,6 +195,13 @@
 				fromDate: null,
 				toDate: null,
 				locations: []
+			};
+			
+			// Values for the state of the specific view.
+			$scope.specificView = {
+				fromDate: null,
+				toDate: null,
+				location: []
 			};
 
             $scope.data = [
@@ -196,6 +234,14 @@
 					if ($scope.frequencyView.fromDate === null  || $scope.frequencyView.toDate === null) {
 						return false;
 					}
+					return true;
+				} else if($scope.selectedView === $scope.viewOptions[1]) {
+					console.log('check1');
+					if($scope.specificView.fromDate === null || $scope.specificView.toDate === null) {
+						console.log('check2');
+						return false;
+					}
+					console.log('check3');
 					return true;
 				}
 			};
@@ -238,7 +284,8 @@
 				// Specific crime view.
 				if ($scope.selectedView === $scope.viewOptions[1]) {
 					serverUrl = 'http://localhost:9090/?password=' + getParameterByName('password') + '&databaseQuery=specific';
-					// Specific crime http body config.
+					requestBody.fromDate = $scope.specificView.fromDate;
+					requestBody.toDate = $scope.specificView.toDate;
 				}
 
 				console.log(requestBody);

@@ -102,7 +102,46 @@ public final class RoutingUtilities
 	}
 
 	private static boolean handleSpecificQuery(Request baseRequest, HttpServletRequest request, HttpServletResponse response) {
-		return false;
+		try {
+			System.out.println("check");
+			// Read from request
+			StringBuilder buffer = new StringBuilder();
+			BufferedReader reader = request.getReader();
+			String line;
+			while ((line = reader.readLine()) != null) {
+				buffer.append(line);
+			}
+			String data = buffer.toString();	
+			
+			JSONObject requestBody = new JSONObject(data);
+			String fromDate = requestBody.getString("fromDate");
+			String toDate = requestBody.getString("toDate");
+			
+			QueryExecution.openConnection();
+			ArrayList<JSONObject> results = QueryExecution.querySpecific(fromDate.split("T")[0], toDate.split("T")[0]);
+			QueryExecution.closeConnection();
+			
+			String finalResultString = "[";
+			
+			for (JSONObject myJsonObject : results) {
+				finalResultString += myJsonObject.toString() + ",";
+			}
+			
+			System.out.println(finalResultString);
+			
+			int indexOfLastComma = finalResultString.lastIndexOf(",");
+			
+			String noLastComma = finalResultString.substring(0, indexOfLastComma);
+			
+			noLastComma += "]";
+			
+			sendOK(baseRequest, response, noLastComma);
+			
+		} catch(Exception e) {
+			System.out.println(e);
+		}
+		
+		return true;
 	}
 
 	public static boolean handleURL(Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, JSONException {
