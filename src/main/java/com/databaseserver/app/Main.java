@@ -6,7 +6,7 @@ import com.databaseserver.server.JettyServer;
 
 public class Main {
 	public static void main(String[] args) throws Exception {
-		String passwordToUse = System.getenv("databasesPassword");
+		String passwordToUse = "toast";/*System.getenv("databasesPassword");*/
 		if (passwordToUse == null) 
 		{
 			System.out.println("Enter a server password:");

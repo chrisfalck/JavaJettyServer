@@ -101,33 +101,41 @@
                     <md-button class="md-raised md-primary" ng-click="applyChanges()">Apply Changes</md-button>
                     <md-content class="margin-left" style="width: 1000px; overflow: visible;">
                         <h3>Select Sorting Options</h3>
-                        <div class="margin-left">
-                            <form class="right">
+                        <div style="border-style: solid; border-width: 1px; border-color: lightgrey; padding: 5px;">
+                            <form>
                                 From:
                                 <input id="frequencyFromDate" type="date" ng-model="frequencyView.fromDate"> To:
                                 <input id="frequencyToDate" type="date" ng-model="frequencyView.toDate">
                             </form>
+                            <hr>
+                            <span>Filter by Event Clearance Group:</span>
+                            <select ng-options="eventGroup as eventGroup.name for eventGroup in eventClearanceGroupList" ng-model="selectedClearanceGroup"></select>
                             <br>
+                            <hr>
+                            <span>Filter by Block Address:</span>
+                            <select ng-options="location as location.address for location in blockAddressList" ng-model="selectedBlockAddress"></select>
+                            <br>
+                            <br>
+                            <span>Range:<input ng-model="addressLowerBound"/> to <input ng-model="addressUpperBound"/></span>
+                            <hr>
                             <md-radio-group ng-model="frequencyView.sortOrder" class="left">
-                                <md-radio-button value="Most Frequent First">Most Frequent First </md-radio-button>
-                                <md-radio-button value="Least Frequent First"> Least Frequent First </md-radio-button>
+                                <md-radio-button value="desc">Most Frequent First</md-radio-button>
+                                <md-radio-button value="asc">Least Frequent First</md-radio-button>
                             </md-radio-group>
                         </div>
-                        <div ng-show="data.length > 0">
+                        <div ng-show="frequencyData.length > 0">
                             <table border="1" style="text-align: center; width: 100%">
                                 <thead>
                                     <tr>
                                         <th>Event Clearance Code</th>
                                         <th>Event Clearance Description</th>
-                                        <th>Event Clearance Group</th>
                                         <th>Number of Incidents of This Type</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr ng-repeat="entry in data" class="table-data">
+                                    <tr ng-repeat="entry in frequencyData" class="table-data">
                                         <td>{{entry.event_code[0]}}</td>
                                         <td>{{entry.event_clearance_description[0]}}</td>
-                                        <td>{{entry.group_name[0]}}</td>
                                         <td>{{entry.num[0]}}</td>
                                     </tr>
                                 </tbody>
@@ -148,7 +156,7 @@
                                 <input type="date" ng-model="specificView.toDate">
                             </form>
                         </div>
-                        <div class="data">
+                        <div class="data" ng-show="specificData.length > 0">
                             <table border="1">
                                 <thead>
                                     <tr>
@@ -160,7 +168,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr ng-repeat="entry in data" class="table-data">
+                                    <tr ng-repeat="entry in specificData" class="table-data">
                                         <td>{{entry.general_offense_number[0]}}</td>
                                         <td>{{entry.event_code[0]}}</td>
                                         <td>{{entry.addr[0]}}</td>
@@ -189,6 +197,7 @@
 		app.controller('IndexController', ['$scope', '$http', function($scope, $http) {
 
             let serverBaseUrl = 'http://localhost:9090/?password=' + getParameterByName('password');
+            let generalQueryUrl = serverBaseUrl + '&databaseQuery=generalQuery';
 
 			// The two types of views we offer.
 			$scope.viewOptions = ['Frequency', 'Specific Crime'];
@@ -198,59 +207,161 @@
 
             // Call everything needed to initialize the app.
             $scope.initializePage = function() {
-                initializeDates();
+                // let requestBody = {
+                //     'query' : 'select general_offense_number, event_code, addr ' + 
+                //               'from Incident where rownum < 1000',
+                //     'returnValues': {
+                //         'general_offense_number' : 'string',
+                //         'event_code' : 'int', 
+                //         'addr' : 'string'                   
+                //     }
+                // }
+
+                // $http.post(serverBaseUrl + '&databaseQuery=generalQuery', requestBody).then(
+                //     (successResponse) => {
+                //         console.log(successResponse);
+                //     },
+                //     (errorResponse) => {
+                //         console.log(errorResponse);
+                //     }
+                // );
+
+                initializeDates(chainGroupListInit);
+
+                function chainGroupListInit() {
+                    initializeEventClearanceGroupList(chainBlockAddressInit);
+                };
+
+                function chainBlockAddressInit() {
+                    initializeBlockAddressList();
+                }
             };
 
-            function initializeDates() {
+            $scope.applyEventGroupFilter = function() {
+            };
+
+            function initializeDates(callback) {
 
                 let fromDateElementModels = ['frequencyView', 'specificView'];
                 let toDateElementModels = ['frequencyView', 'specificView'];
 
-                $http.get(serverBaseUrl + '&databaseQuery=initialDateRange').then(
+                let minDateRequestBody = {
+                    'query': 'select min(crime_date) as fromDate from CrimeTime',
+                    'returnValues' : {
+                        'fromDate' : 'string'
+                    }
+                }
+
+                let maxDateRequestBody = {
+                    'query': 'select max(crime_date) as toDate from CrimeTime',
+                    'returnValues' : {
+                        'toDate' : 'string'
+                    }
+                }
+
+                $http.post(generalQueryUrl, minDateRequestBody).then(
                     (successResponse) => {
                         fromDateElementModels.forEach((dateModel) => {
                             let defaultFromDate = new Date(successResponse.data[0].fromDate[0]);
                             $scope[dateModel].fromDate = defaultFromDate;
                         });
-                        toDateElementModels.forEach((dateModel) => {
-                            let defaultToDate = new Date(successResponse.data[0].toDate[0]);
-                            $scope[dateModel].toDate = defaultToDate;
-                        });
+                        getMaxDate();
                     }, 
                     (errorResponse) => {
                         console.log('Error: ' + JSON.stringify(errorResponse));
                     }
                 );
 
+                function getMaxDate() {
+
+                     $http.post(generalQueryUrl, maxDateRequestBody).then(
+                        (successResponse) => {
+                            toDateElementModels.forEach((dateModel) => {
+                                let defaultToDate = new Date(successResponse.data[0].toDate[0]);
+                                $scope[dateModel].toDate = defaultToDate;
+                            });
+                            callback();
+                        },
+                        (errorResponse) => {
+                            console.log(errorResponse);
+                        }
+                    );
+
+                };
+
             };
 
-			// Values for the state of the frequency view.
+            function initializeEventClearanceGroupList(callback) {
+                let eventClearanceGroupRequestBody = {
+                    'query': 'select distinct name from Event_Clearance_Group',
+                    'returnValues': {
+                        'name' : 'string'
+                    }
+                };
+
+                $http.post(generalQueryUrl, eventClearanceGroupRequestBody).then(
+                    (successResponse) => {
+                        console.log(successResponse);
+                        $scope.eventClearanceGroupList = successResponse.data;
+                        $scope.eventClearanceGroupList.unshift({'name': '-No filter-'});
+                        callback();
+                    },
+                    (errorResponse) => {
+                        console.log(JSON.stringify(errorResponse));
+                    }
+                );
+            };
+
+            $scope.addressLowerBound = 0;
+            $scope.addressUpperBound = 1000;
+            function initializeBlockAddressList() {
+                let blockAddressRequestBody = {
+                    'query': 'select distinct address from Location where rownum > ' + $scope.addressLowerBound + ' and rownum < ' + $scope.addressUpperBound,
+                    'returnValues': {
+                        'address': 'string'
+                    }
+                }
+
+                $http.post(generalQueryUrl, blockAddressRequestBody).then(
+                    (successResponse) => {
+                        $scope.blockAddressList = successResponse.data;
+                        $scope.blockAddressList.unshift({'address': '-No filter-'});
+                    },
+                    (errorResponse) => {
+                        console.log(errorResponse);
+                    }
+                );
+            };
+            
+            // Values for the state of the frequency view.
 			$scope.frequencyView = {
-				sortOrder: 'Most Frequent First',
+				sortOrder: 'desc',
 				fromDate: null,
 				toDate: null,
-				locations: []
+                eventClearanceGroup: null,
+				location: null
 			};
 			
 			// Values for the state of the specific view.
 			$scope.specificView = {
 				fromDate: null,
 				toDate: null,
-				locations: []
+				location: null
 			};
 
             $scope.data = [];
 
 			function validateQueryOptions() {
 				if ($scope.selectedView === $scope.viewOptions[0]) {
-					if ($scope.frequencyView.sortOrder !== 'Most Frequent First' && $scope.frequencyView.sortOrder !== 'Least Frequent First') {
+					if ($scope.frequencyView.sortOrder !== 'asc' && $scope.frequencyView.sortOrder !== 'desc') {
 						return false;
 					}
 					if ($scope.frequencyView.fromDate === null  || $scope.frequencyView.toDate === null) {
 						return false;
 					}
 					return true;
-				} else if($scope.selectedView === $scope.viewOptions[1]) {
+				} 
+                else if($scope.selectedView === $scope.viewOptions[1]) {
 					if($scope.specificView.fromDate === null || $scope.specificView.toDate === null) {
 						return false;
 					}
@@ -270,7 +381,7 @@
 				return decodeURIComponent(results[2].replace(/\+/g, " "));
 			};
 
-			$scope.applyChanges = () => {
+			$scope.applyChanges = function() {
 
 				// Validate all fields.
 				if (!validateQueryOptions()) {
@@ -278,41 +389,81 @@
 					return;
 				}
 
-				// Build http request body differently depending on the view we have open.
-				let requestBody = {
-					queryType: $scope.selectedView
-				};
-
-                let serverUrl = ''
-
-				// Frequency view.
-				if ($scope.selectedView === $scope.viewOptions[0]) {
-					serverUrl = serverBaseUrl + '&databaseQuery=frequency';
-					requestBody.sortOrder = $scope.frequencyView.sortOrder;
-					requestBody.fromDate = $scope.frequencyView.fromDate;
-					requestBody.toDate = $scope.frequencyView.toDate;
-				}
-
-				// Specific crime view.
-				if ($scope.selectedView === $scope.viewOptions[1]) {
-					serverUrl = serverBaseUrl + '&databaseQuery=specific';
-					requestBody.fromDate = $scope.specificView.fromDate;
-					requestBody.toDate = $scope.specificView.toDate;
-				}
-
-				$http.post(serverUrl, requestBody).then(postSuccess, postFailure);
-
-				function postSuccess(response) {
-                    var dataJSON = response.data;
-                    $scope.data = dataJSON;
-					// Populate page with response data.
-				};
-
-				function postFailure(response) {
-					console.log('Failure: ' + JSON.stringify(response));
-				};
+                if ($scope.selectedView === $scope.viewOptions[0]) updateFrequencyView();				
+                if ($scope.selectedView === $scope.viewOptions[1]) updateSpecificCrimeView();
 
 			};
+
+            function updateFrequencyView() {
+                let clearanceGroupFilter;
+                let blockAddressFilter;
+                
+                // This will be true if the field exists and is not the string '-No filter-'. 
+                // typeOf returns 'object' if the selection is valid for the query.                                    
+                if ($scope.selectedClearanceGroup && typeof($scope.selectedClearanceGroup.name) !== 'string') clearanceGroupFilter = ' and group_name=\'' + $scope.selectedClearanceGroup.name[0] + '\' ';
+                else clearanceGroupFilter = '';
+
+                if ($scope.selectedBlockAddress && typeof($scope.selectedBlockAddress.address) !== 'string') blockAddressFilter = ' and addr=\'' + $scope.selectedBlockAddress.address[0] + '\' ';
+                else blockAddressFilter = '';
+
+                let query = '' + 
+                'select event_code, event_clearance_description, count(event_code) as num ' + 
+                'from Incident, Type, CrimeTime ' + 
+                'where event_code = event_clearance_code and general_offense_number = offense_number ' + 
+                      'and crime_date > To_Date(\'' + $scope.frequencyView.fromDate.toISOString().split('T')[0] + '\', \'YYYY-MM-DD\') ' + 
+                      'and crime_date < To_Date(\'' + $scope.frequencyView.toDate.toISOString().split('T')[0] + '\',\'YYYY-MM-DD\') ' + 
+                       clearanceGroupFilter + blockAddressFilter +
+                'group by event_code, event_clearance_description order by count(event_code) ' + $scope.frequencyView.sortOrder;
+
+                let updateFrequencyViewRequestBody = {
+                    'query': query,
+                    'returnValues' : {
+                        'event_code': 'string',
+                        'event_clearance_description': 'string',
+                        'num': 'int'
+                    }
+                }
+
+                $http.post(generalQueryUrl, updateFrequencyViewRequestBody).then(
+                    (successResponse) => {
+                        $scope.frequencyData = successResponse.data;
+                    },
+                    (errorResponse) => {
+                        console.log(errorResponse);
+                    }
+                );
+
+            };
+
+            function updateSpecificCrimeView() {
+                let query = '' + 
+                'select * from Incident, CrimeTime ' + 
+                'where general_offense_number = offense_number ' + 
+                      'and crime_date > To_Date(\'' + $scope.specificView.fromDate.toISOString().split('T')[0] + '\', \'YYYY-MM-DD\') ' + 
+                      'and crime_date < To_Date(\'' + $scope.specificView.toDate.toISOString().split('T')[0] + '\',\'YYYY-MM-DD\') ' + 
+                      'and rownum < 1000'; 
+
+                let specificCrimeRequestBody = {
+                    'query': query,
+                    'returnValues': {
+                        'general_offense_number': 'string',
+                        'event_code': 'int',
+                        'addr': 'string',
+                        'crime_date': 'date',
+                        'time': 'string'
+                    }
+                }
+
+                $http.post(generalQueryUrl, specificCrimeRequestBody).then(
+                    (successResponse) => {
+                        console.log(successResponse);
+                        $scope.specificData = successResponse.data;
+                    },
+                    (errorResponse) => {
+                        console.log(errorResponse);
+                    }
+                );
+            };
 
 		}]);
 	</script>

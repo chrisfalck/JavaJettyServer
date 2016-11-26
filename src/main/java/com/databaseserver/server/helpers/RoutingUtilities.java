@@ -1,14 +1,12 @@
 package com.databaseserver.server.helpers;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.sql.Array;
 import java.util.ArrayList;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.server.Request;
-import org.json.HTTPTokener;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -91,46 +89,10 @@ public final class RoutingUtilities
 			return finalResultString;
 	}
 	
-
-	private static boolean handleFrequencyQuery(Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, JSONException {
-		
-		JSONObject requestBody = getBodyAsJSON(request);
-		String sortOrder = requestBody.getString("sortOrder");
-		String fromDate = requestBody.getString("fromDate");
-		String toDate = requestBody.getString("toDate");
-		
-		QueryExecution.openConnection();
-		ArrayList<JSONObject> results = QueryExecution.queryByFrequency(fromDate.split("T")[0], toDate.split("T")[0], sortOrder);
-		QueryExecution.closeConnection();
-		
-		sendOK(baseRequest, response, convertJSONArrayToString(results));
-		return true; 
-	}
-
-	private static boolean handleSpecificQuery(Request baseRequest, HttpServletRequest request, HttpServletResponse response) {
-		try {
-
-			JSONObject requestBody = getBodyAsJSON(request);
-			String fromDate = requestBody.getString("fromDate");
-			String toDate = requestBody.getString("toDate");
-			
-			QueryExecution.openConnection();
-			ArrayList<JSONObject> results = QueryExecution.querySpecific(fromDate.split("T")[0], toDate.split("T")[0]);
-			QueryExecution.closeConnection();
-			
-			sendOK(baseRequest, response, convertJSONArrayToString(results));
-			
-		} catch(Exception e) {
-			System.out.println(e);
-		}
-		
-		return true;
-	}
-	
-	private static boolean handleInitialDateRange(Request baseRequest, HttpServletRequest request, HttpServletResponse response) {
+	private static boolean handleGeneralQuery(Request baseRequest, HttpServletRequest request, HttpServletResponse response) {
 		try {
 			QueryExecution.openConnection();
-			ArrayList<JSONObject> results = QueryExecution.queryForInitialDateRange();
+			ArrayList<JSONObject> results = QueryExecution.executeGeneralQuery(getBodyAsJSON(request));
 			QueryExecution.closeConnection();
 			
 			sendOK(baseRequest, response, convertJSONArrayToString(results));
@@ -138,7 +100,7 @@ public final class RoutingUtilities
 		catch (Exception e) {
 			System.out.println(e);
 		}
-		
+	
 		return true;
 	}
 
@@ -158,20 +120,15 @@ public final class RoutingUtilities
 			if (queryKeysAndValues.get(i) == null || queryKeysAndValues.get(i + 1) == null) continue;
 			if (queryKeysAndValues.get(i).equals("databaseQuery")) {
 				
-				System.out.println("Made it inside handler select block.");
 				// Choose an appropriate handler for the type of database query. 
 				String queryType = queryKeysAndValues.get(i + 1);
-				if (queryType.equals("frequency")) {
-					System.out.println("\nCrime frequency request.");
-					return handleFrequencyQuery(baseRequest, request, response);
-				} 
-				else if (queryType.equals("specific")) {
-					System.out.println("\nSpecific crime request.");
-					return handleSpecificQuery(baseRequest, request, response);
+			    if (queryType.equals("generalQuery")) {
+					System.out.println("\nGeneral query request.");
+					return handleGeneralQuery(baseRequest, request, response);
 				}
-				else if (queryType.equals("initialDateRange")) {
-					System.out.println("\nInitial date range request.");
-					return handleInitialDateRange(baseRequest, request, response);
+				else {
+					System.err.println("Unrecognized query type.");
+					return false;
 				}
 				
 			}
