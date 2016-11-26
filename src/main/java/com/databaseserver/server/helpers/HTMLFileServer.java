@@ -11,21 +11,9 @@ public final class HTMLFileServer
 {
 	public static String prepareResponseString(String fileName) throws IOException 
 	{
-		
-		// Path separator dependent. 
-		String systemDependentPathToStaticFiles = "/home/ryan/git/JavaJettyServer/static_files/" + fileName;
-		
-		// Path separator independent. 
-		// Rebuild the string with the system's path separator. 
-		String systemIndependentPathToStaticFiles = ""; 
-		String[] pathPieces = systemDependentPathToStaticFiles.split("/");
-		for (String filePathPiece : pathPieces) 
-		{
-			systemIndependentPathToStaticFiles += filePathPiece + File.separator;
-		}
-
 		// Turn the path string into a URI that can be passed to the Files class. 
-		Path filePath = Paths.get(systemIndependentPathToStaticFiles);
+		// String systemDependentPathToStaticFiles = "/home/ryan/git/JavaJettyServer/static_files/" + fileName;
+		Path filePath = Paths.get("C:", "Users", "Chris", "git", "JavaJettyServer", "static_files", fileName);
 		List<String> fileLines = Files.readAllLines(filePath);
 		
 		// Hold the final string to return.

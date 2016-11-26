@@ -58,7 +58,7 @@ public final class RoutingUtilities
 		return true;
 	}
 	
-	private static JSONObject getBodyAsJSON(HttpServletRequest request) throws IOException, JSONException {
+	public static JSONObject getBodyAsJSON(HttpServletRequest request) throws IOException, JSONException {
 		// Read from request
 		StringBuilder buffer = new StringBuilder();
 		BufferedReader reader = request.getReader();
@@ -70,6 +70,27 @@ public final class RoutingUtilities
 		
 		return new JSONObject(data);
 	}
+	
+	/**
+	 * For each query result (represented as a JSONObject), pull the string result out and use it to build an array of JSON.
+	 * @param queryResults
+	 * @return
+	 */
+	private static String convertJSONArrayToString(ArrayList<JSONObject> queryResults) {
+			String finalResultString = "[";
+			
+			for (JSONObject myJsonObject : queryResults) {
+				finalResultString += myJsonObject.toString() + ",";
+			}
+			
+			int indexOfLastComma = finalResultString.lastIndexOf(",");
+
+			finalResultString = finalResultString.substring(0, indexOfLastComma);
+			finalResultString += "]";	
+			
+			return finalResultString;
+	}
+	
 
 	private static boolean handleFrequencyQuery(Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, JSONException {
 		
@@ -82,38 +103,14 @@ public final class RoutingUtilities
 		ArrayList<JSONObject> results = QueryExecution.queryByFrequency(fromDate.split("T")[0], toDate.split("T")[0], sortOrder);
 		QueryExecution.closeConnection();
 		
-		String finalResultString = "[";
-		
-		for (JSONObject myJsonObject : results) {
-			finalResultString += myJsonObject.toString() + ",";
-		}
-		
-		System.out.println(finalResultString);
-		
-		int indexOfLastComma = finalResultString.lastIndexOf(",");
-		
-		String noLastComma = finalResultString.substring(0, indexOfLastComma);
-		
-		noLastComma += "]";
-		
-		System.out.println("Frequency request with params:\n" + sortOrder + "\n" + fromDate + "\n" + toDate + "\n");
-		sendOK(baseRequest, response, noLastComma);
+		sendOK(baseRequest, response, convertJSONArrayToString(results));
 		return true; 
 	}
 
 	private static boolean handleSpecificQuery(Request baseRequest, HttpServletRequest request, HttpServletResponse response) {
 		try {
-			System.out.println("check");
-			// Read from request
-			StringBuilder buffer = new StringBuilder();
-			BufferedReader reader = request.getReader();
-			String line;
-			while ((line = reader.readLine()) != null) {
-				buffer.append(line);
-			}
-			String data = buffer.toString();	
-			
-			JSONObject requestBody = new JSONObject(data);
+
+			JSONObject requestBody = getBodyAsJSON(request);
 			String fromDate = requestBody.getString("fromDate");
 			String toDate = requestBody.getString("toDate");
 			
@@ -121,21 +118,7 @@ public final class RoutingUtilities
 			ArrayList<JSONObject> results = QueryExecution.querySpecific(fromDate.split("T")[0], toDate.split("T")[0]);
 			QueryExecution.closeConnection();
 			
-			String finalResultString = "[";
-			
-			for (JSONObject myJsonObject : results) {
-				finalResultString += myJsonObject.toString() + ",";
-			}
-			
-			System.out.println(finalResultString);
-			
-			int indexOfLastComma = finalResultString.lastIndexOf(",");
-			
-			String noLastComma = finalResultString.substring(0, indexOfLastComma);
-			
-			noLastComma += "]";
-			
-			sendOK(baseRequest, response, noLastComma);
+			sendOK(baseRequest, response, convertJSONArrayToString(results));
 			
 		} catch(Exception e) {
 			System.out.println(e);
@@ -143,22 +126,54 @@ public final class RoutingUtilities
 		
 		return true;
 	}
+	
+	private static boolean handleInitialDateRange(Request baseRequest, HttpServletRequest request, HttpServletResponse response) {
+		try {
+			QueryExecution.openConnection();
+			ArrayList<JSONObject> results = QueryExecution.queryForInitialDateRange();
+			QueryExecution.closeConnection();
+			
+			sendOK(baseRequest, response, convertJSONArrayToString(results));
+		} 
+		catch (Exception e) {
+			System.out.println(e);
+		}
+		
+		return true;
+	}
 
+	// Returns false if the parent server should resolve the request and true if the request is resolved by a handler. 
 	public static boolean handleURL(Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, JSONException {
 		String[] queryKeysSeparatePairs = request.getQueryString().split("&");
 		ArrayList<String> queryKeysAndValues = new ArrayList<String>();
+		
+		// Parse the URL into a String where successive indices like 0 and 1 are the key and value of the query string. 
 		for (String str : queryKeysSeparatePairs) {
 			queryKeysAndValues.add(str.split("=")[0]);
 			queryKeysAndValues.add(str.split("=")[1]);
 		}
+		
+		// Determine the kind of URL.
 		for (int i = 0; i < queryKeysAndValues.size(); i += 2) {
 			if (queryKeysAndValues.get(i) == null || queryKeysAndValues.get(i + 1) == null) continue;
 			if (queryKeysAndValues.get(i).equals("databaseQuery")) {
-				if (queryKeysAndValues.get(i + 1).equals("frequency")) {
+				
+				System.out.println("Made it inside handler select block.");
+				// Choose an appropriate handler for the type of database query. 
+				String queryType = queryKeysAndValues.get(i + 1);
+				if (queryType.equals("frequency")) {
+					System.out.println("\nCrime frequency request.");
 					return handleFrequencyQuery(baseRequest, request, response);
-				} else if (queryKeysAndValues.get(i + 1).equals("specific")) {
+				} 
+				else if (queryType.equals("specific")) {
+					System.out.println("\nSpecific crime request.");
 					return handleSpecificQuery(baseRequest, request, response);
 				}
+				else if (queryType.equals("initialDateRange")) {
+					System.out.println("\nInitial date range request.");
+					return handleInitialDateRange(baseRequest, request, response);
+				}
+				
 			}
 		}
 

@@ -61,6 +61,40 @@ public class QueryExecution {
     	return null;
     }
     
+    public static ArrayList<JSONObject> queryForInitialDateRange() {
+    	try {
+    		ResultSet resultSetMinDate = statement.executeQuery("select min(Crime_Date) from CrimeTime");
+
+    		JSONObject dates = new JSONObject();
+
+    		if (resultSetMinDate.next()) {
+    			dates.append("fromDate", resultSetMinDate.getString(1));
+    		} 
+    		else {
+    			System.out.println("No min date.");
+    		}
+    		
+    		ResultSet resultSetMaxDate = statement.executeQuery("select max(Crime_Date) from CrimeTime");
+    		
+    		if (resultSetMaxDate.next()) {
+    			dates.append("toDate", resultSetMaxDate.getString(1));
+    		} 
+    		else {
+    			System.out.println("No max date.");
+    		}
+    		
+    		ArrayList<JSONObject> returnArray = new ArrayList<JSONObject>();
+    		returnArray.add(dates);
+    		
+    		return returnArray; 
+		} 
+    	catch (Exception e) {
+    		System.err.println(e.toString() + "\n" + e.getStackTrace());
+		}
+    	
+    	return null;
+    };
+    
     public static ArrayList<JSONObject> queryByFrequency(String fromDate, String toDate, String sortOrder) {
     	
         try {
@@ -88,7 +122,6 @@ public class QueryExecution {
             	currentResult.append("group_name", rs.getString("group_name"));
             	currentResult.append("num", rs.getInt("num"));
             	queryResults.add(currentResult);
-                System.out.println(rs.getInt("event_code") + " ---- " + rs.getString("event_clearance_description") + " ---- " + rs.getString("group_name") + " ---- " + rs.getInt("num"));
             }
             
             return queryResults;

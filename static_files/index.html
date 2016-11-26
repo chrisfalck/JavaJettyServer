@@ -14,180 +14,215 @@
 <script src="http://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.js"></script>
 
 <!-- Styles -->
+
 <head>
     <title>
         Seattle Crime Analysis
     </title>
-	<style type="text/css">
-		.center {
-			text-align: center;
-		}
-		.area1, .area2 {
-			display:flex;
-			box-sizing: border-box;
-			min-width:100%;
-		}
-		.area1 {
-			height:5%;
-			max-height:5%;
-			width: 100%;
-			min-width: 100%;
-			flex:1 1 10%;
-			border: 1px darkblue;
-			border-style: none none solid none;
-		}
-		.area2 {
-			height: 95%;
-			max-height:95%;
-			width: 100%;
-			min-width: 100%;
-			flex: 1 1 100%;
-			border: 1px darkblue;
-			border-style: none none solid none;
-		}
-		.left {
-			text-align: left;
-			margin: 2px 10px;
-			display: inline;
-            float: right;
-		}
-
-		.right {
-			text-align: right;
-			margin: 2px 10px;
-			display: inline;
-		}
-		.margin-left {
-			margin-left: 50px;
-		}
+    <style type="text/css">
+        .center {
+            text-align: center;
+        }
+        
+        .area1,
+        .area2 {
+            display: flex;
+            box-sizing: border-box;
+            min-width: 100%;
+        }
+        
+        .area1 {
+            height: 10%;
+            max-height: 10%;
+            width: 100%;
+            min-width: 100%;
+            flex: 1 1 10%;
+            border: 1px darkblue;
+            border-style: none none solid none;
+        }
+        
+        .area2 {
+            height: 90%;
+            max-height: 90%;
+            width: 100%;
+            min-width: 100%;
+            flex: 1 1 100%;
+        }
+        
+        .left {
+            text-align: left;
+            margin: 2px 10px;
+            display: inline;
+        }
+        
+        .right {
+            text-align: right;
+            margin: 2px 10px;
+            display: inline;
+        }
+        
+        .margin-left {
+            margin-left: 50px;
+        }
+        
         .data {
             margin-top: 100px;
             margin-left: 50px;
         }
+        
         .table-data td {
             text-align: center;
         }
-	</style>
+    </style>
 </head>
 
-<body ng-app="databasesApp" ng-controller="IndexController" ng-cloak layout="column">
+<body ng-app="databasesApp" ng-controller="IndexController" ng-cloak layout="column" ng-init="initializePage()">
 
-	<!-- Visible page content -->
-	<md-toolbar layout="row" layout-align="center center">
-		<h3 class="center">Intro to Databases Fall 2016: Seattle Crime Database Analysis</h3>
-	</md-toolbar>
+    <!-- Visible page content -->
+    <md-toolbar layout="row" layout-align="center center">
+        <h3 class="center">Intro to Databases Fall 2016: Seattle Crime Database Analysis</h3>
+    </md-toolbar>
 
-	<div flex layout="row">
-		<div layout="column" flex>
-			<div class="area1">
-				<!-- Make sure to wrap normal content in an md-content tag! -->
-				<md-content class="margin-left">
-					<span>Analyze data by:</span>
-					<select ng-options="viewType for viewType in viewOptions"
-							ng-model="selectedView" ng-change="applyViewChange()">
+    <div flex layout="row">
+        <div layout="column" flex>
+            <div class="area1">
+                <!-- Make sure to wrap normal content in an md-content tag! -->
+                <md-content class="margin-left">
+                    <br>
+                    <span>Analyze data by:</span>
+                    <select ng-options="viewType for viewType in viewOptions" ng-model="selectedView" ng-change="applyViewChange()">
 					</select>
-				</md-content>
-			</div>
-			<div class="area2">
+                </md-content>
+            </div>
+            <div class="area2">
 
                 <!-- View crime statistics by frequency view. -->
-				<div ng-show="selectedView === 'Frequency'" style="width: 60%;">
-					<md-button class="md-raised md-primary" ng-click="applyChanges()">Apply Changes</md-button>
-					<md-content class="margin-left" style="width: 1000px; overflow: visible;">
-						<h3>Select Date Range</h3>
-						<div class="margin-left">
-							<md-radio-group ng-model="frequencyView.sortOrder" class="left">
-								<md-radio-button value="Most Frequent First">Most Frequent First </md-radio-button>
-								<md-radio-button value="Least Frequent First"> Least Frequent First </md-radio-button>
-							</md-radio-group>
-    						<form class="right">
-    							From:
-    							<input type="date" ng-model="frequencyView.fromDate">
-    							To:
-    							<input type="date" ng-model="frequencyView.toDate">
-    						</form>
+                <div ng-show="selectedView === 'Frequency'" style="width: 60%;">
+                    <md-button class="md-raised md-primary" ng-click="applyChanges()">Apply Changes</md-button>
+                    <md-content class="margin-left" style="width: 1000px; overflow: visible;">
+                        <h3>Select Sorting Options</h3>
+                        <div class="margin-left">
+                            <form class="right">
+                                From:
+                                <input id="frequencyFromDate" type="date" ng-model="frequencyView.fromDate"> To:
+                                <input id="frequencyToDate" type="date" ng-model="frequencyView.toDate">
+                            </form>
+                            <br>
+                            <md-radio-group ng-model="frequencyView.sortOrder" class="left">
+                                <md-radio-button value="Most Frequent First">Most Frequent First </md-radio-button>
+                                <md-radio-button value="Least Frequent First"> Least Frequent First </md-radio-button>
+                            </md-radio-group>
                         </div>
-					</md-content>
-                    <div class="data">
-                        <table border="1">
-                            <thead>
-                                <tr>
-                                    <th>Event Clearance Code</th>
-                                    <th>Event Clearance Description</th>
-                                    <th>Event Clearance Group</th>
-                                    <th>Number of Incidents of This Type</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr ng-repeat="entry in data" class="table-data">
-                                    <td>{{entry.event_code[0]}}</td>
-                                    <td>{{entry.event_clearance_description[0]}}</td>
-                                    <td>{{entry.group_name[0]}}</td>
-                                    <td>{{entry.num[0]}}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-				</div>
+                        <div ng-show="data.length > 0">
+                            <table border="1" style="text-align: center; width: 100%">
+                                <thead>
+                                    <tr>
+                                        <th>Event Clearance Code</th>
+                                        <th>Event Clearance Description</th>
+                                        <th>Event Clearance Group</th>
+                                        <th>Number of Incidents of This Type</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="entry in data" class="table-data">
+                                        <td>{{entry.event_code[0]}}</td>
+                                        <td>{{entry.event_clearance_description[0]}}</td>
+                                        <td>{{entry.group_name[0]}}</td>
+                                        <td>{{entry.num[0]}}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </md-content>
+                </div>
 
                 <!-- View crime statistics for a specific crime. -->
-				<div ng-show="selectedView === 'Specific Crime'">
-					<md-button class="md-raised md-primary" ng-click="applyChanges()">Apply Changes</md-button>
-					<md-content class="margin-left" style="width: 1000px; overflow: visible;">
-						<h3>Select Date Range</h3>
-						<div class="margin-left">
-    						<form class="right">
-    							From:
-    							<input type="date" ng-model="specificView.fromDate">
-    							To:
-    							<input type="date" ng-model="specificView.toDate">
-    						</form>
+                <div ng-show="selectedView === 'Specific Crime'">
+                    <md-button class="md-raised md-primary" ng-click="applyChanges()">Apply Changes</md-button>
+                    <md-content class="margin-left" style="width: 1000px; overflow: visible;">
+                        <h3>Select Date Range</h3>
+                        <div class="margin-left">
+                            <form class="right">
+                                From:
+                                <input type="date" ng-model="specificView.fromDate"> To:
+                                <input type="date" ng-model="specificView.toDate">
+                            </form>
                         </div>
                         <div class="data">
-	                        <table border="1">
-	                            <thead>
-	                                <tr>
-	                                    <th>General Offense Number</th>
-	                                    <th>Event Code</th>
-	                                    <th>Address</th>
-	                                    <th>Date</th>
-	                                    <th>Time</th>
-	                                </tr>
-	                            </thead>
-	                            <tbody>
-	                                <tr ng-repeat="entry in data" class="table-data">
-	                                	<td>{{entry.general_offense_number[0]}}</td>
-	                                    <td>{{entry.event_code[0]}}</td>
-	                                    <td>{{entry.addr[0]}}</td>
-	                                    <td>{{entry.crime_date[0]}}</td>
-	                                    <td>{{entry.time[0]}}</td>
-	                                </tr>
-	                            </tbody>
-	                        </table>
-                    </div>
-					</md-content>
-				</div>
+                            <table border="1">
+                                <thead>
+                                    <tr>
+                                        <th>General Offense Number</th>
+                                        <th>Event Code</th>
+                                        <th>Address</th>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="entry in data" class="table-data">
+                                        <td>{{entry.general_offense_number[0]}}</td>
+                                        <td>{{entry.event_code[0]}}</td>
+                                        <td>{{entry.addr[0]}}</td>
+                                        <td>{{entry.crime_date[0]}}</td>
+                                        <td>{{entry.time[0]}}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </md-content>
+                </div>
 
-			</div>
-		</div>
-	</div>
-
-
+            </div>
+        </div>
+    </div>
 
 
 
 
 
-	<!-- Angular controller setup. -->
-	<script>
+
+
+    <!-- Angular controller setup. -->
+    <script>
 		var app = angular.module('databasesApp', ['ngMaterial']);
 		app.controller('IndexController', ['$scope', '$http', function($scope, $http) {
+
+            let serverBaseUrl = 'http://localhost:9090/?password=' + getParameterByName('password');
 
 			// The two types of views we offer.
 			$scope.viewOptions = ['Frequency', 'Specific Crime'];
 
 			// Default the view to frequency on initial page load.
 			$scope.selectedView = $scope.viewOptions[0];
+
+            // Call everything needed to initialize the app.
+            $scope.initializePage = function() {
+                initializeDates();
+            };
+
+            function initializeDates() {
+
+                let fromDateElementModels = ['frequencyView', 'specificView'];
+                let toDateElementModels = ['frequencyView', 'specificView'];
+
+                $http.get(serverBaseUrl + '&databaseQuery=initialDateRange').then(
+                    (successResponse) => {
+                        fromDateElementModels.forEach((dateModel) => {
+                            let defaultFromDate = new Date(successResponse.data[0].fromDate[0]);
+                            $scope[dateModel].fromDate = defaultFromDate;
+                        });
+                        toDateElementModels.forEach((dateModel) => {
+                            let defaultToDate = new Date(successResponse.data[0].toDate[0]);
+                            $scope[dateModel].toDate = defaultToDate;
+                        });
+                    }, 
+                    (errorResponse) => {
+                        console.log('Error: ' + JSON.stringify(errorResponse));
+                    }
+                );
+
+            };
 
 			// Values for the state of the frequency view.
 			$scope.frequencyView = {
@@ -201,33 +236,13 @@
 			$scope.specificView = {
 				fromDate: null,
 				toDate: null,
-				location: []
+				locations: []
 			};
 
-            $scope.data = [
-                {
-                    eventClearanceCode: 202,
-                    eventClearanceDescription: 'Speeding',
-                    eventClearanceGroup: 'Traffic',
-                    numberOfIncidents: 20
-                },
-                {
-                    eventClearanceCode: 101,
-                    eventClearanceDescription: 'Parking',
-                    eventClearanceGroup: 'Traffic',
-                    numberOfIncidents: 4000
-                },
-                {
-                    eventClearanceCode: 303,
-                    eventClearanceDescription: 'Murder',
-                    eventClearanceGroup: 'Crimes',
-                    numberOfIncidents: 10
-                }
-            ];
+            $scope.data = [];
 
 			function validateQueryOptions() {
 				if ($scope.selectedView === $scope.viewOptions[0]) {
-                    console.log($scope.frequencyView);
 					if ($scope.frequencyView.sortOrder !== 'Most Frequent First' && $scope.frequencyView.sortOrder !== 'Least Frequent First') {
 						return false;
 					}
@@ -236,12 +251,9 @@
 					}
 					return true;
 				} else if($scope.selectedView === $scope.viewOptions[1]) {
-					console.log('check1');
 					if($scope.specificView.fromDate === null || $scope.specificView.toDate === null) {
-						console.log('check2');
 						return false;
 					}
-					console.log('check3');
 					return true;
 				}
 			};
@@ -275,7 +287,7 @@
 
 				// Frequency view.
 				if ($scope.selectedView === $scope.viewOptions[0]) {
-					serverUrl = 'http://localhost:9090/?password=' + getParameterByName('password') + '&databaseQuery=frequency';
+					serverUrl = serverBaseUrl + '&databaseQuery=frequency';
 					requestBody.sortOrder = $scope.frequencyView.sortOrder;
 					requestBody.fromDate = $scope.frequencyView.fromDate;
 					requestBody.toDate = $scope.frequencyView.toDate;
@@ -283,18 +295,15 @@
 
 				// Specific crime view.
 				if ($scope.selectedView === $scope.viewOptions[1]) {
-					serverUrl = 'http://localhost:9090/?password=' + getParameterByName('password') + '&databaseQuery=specific';
+					serverUrl = serverBaseUrl + '&databaseQuery=specific';
 					requestBody.fromDate = $scope.specificView.fromDate;
 					requestBody.toDate = $scope.specificView.toDate;
 				}
-
-				console.log(requestBody);
 
 				$http.post(serverUrl, requestBody).then(postSuccess, postFailure);
 
 				function postSuccess(response) {
                     var dataJSON = response.data;
-                    console.log(dataJSON);
                     $scope.data = dataJSON;
 					// Populate page with response data.
 				};
@@ -305,18 +314,9 @@
 
 			};
 
-			// Called when a date range changes.
-			$scope.applyDateChange = () => {
-				console.log('Date now: ' + $scope.frequencyView.fromDate + ' to ' + $scope.frequencyView.toDate);
-			};
-
-			// Called when the view type changes.
-			$scope.applyViewChange = () => {
-				console.log($scope.selectedView + ' selected.');
-			};
-
 		}]);
 	</script>
 
 </body>
+
 </html>
