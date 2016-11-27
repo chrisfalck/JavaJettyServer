@@ -67,7 +67,7 @@ public class QueryExecution {
             return queryResults;
     	}
     	catch (Exception e) {
-    		System.err.println(e.toString() + "\n" + e.getStackTrace());
+    		System.err.println("General query problem " + e.toString() + "\n" + e.getStackTrace());
     	}
 
     	return null;

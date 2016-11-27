@@ -116,7 +116,9 @@
                             <select ng-options="location as location.address for location in blockAddressList" ng-model="selectedBlockAddress"></select>
                             <br>
                             <br>
-                            <span>Range:<input ng-model="addressLowerBound"/> to <input ng-model="addressUpperBound"/></span>
+                            <span>There are {{upperAdressHardBoundary}} unique addresses in the database. Select a subset of them to filter by.</span>
+                            <br>
+                            <span>Range:<input ng-model="addressLowerBound"/> to <input ng-model="addressUpperBound"/><button ng-click="updateAddressList()">Update Address List</button></span>
                             <hr>
                             <md-radio-group ng-model="frequencyView.sortOrder" class="left">
                                 <md-radio-button value="desc">Most Frequent First</md-radio-button>
@@ -207,25 +209,6 @@
 
             // Call everything needed to initialize the app.
             $scope.initializePage = function() {
-                // let requestBody = {
-                //     'query' : 'select general_offense_number, event_code, addr ' + 
-                //               'from Incident where rownum < 1000',
-                //     'returnValues': {
-                //         'general_offense_number' : 'string',
-                //         'event_code' : 'int', 
-                //         'addr' : 'string'                   
-                //     }
-                // }
-
-                // $http.post(serverBaseUrl + '&databaseQuery=generalQuery', requestBody).then(
-                //     (successResponse) => {
-                //         console.log(successResponse);
-                //     },
-                //     (errorResponse) => {
-                //         console.log(errorResponse);
-                //     }
-                // );
-
                 initializeDates(chainGroupListInit);
 
                 function chainGroupListInit() {
@@ -233,11 +216,30 @@
                 };
 
                 function chainBlockAddressInit() {
-                    initializeBlockAddressList();
-                }
+                    initializeBlockAddressList(chainBlockAddressRangeInit);
+                };
+
+                function chainBlockAddressRangeInit() {
+                    initializeBlockAddressRange();
+                };
             };
 
-            $scope.applyEventGroupFilter = function() {
+            function initializeBlockAddressRange() {
+                let addressRangeRequestBody = {
+                    'query': 'select count(address) as addressRange from Location',
+                    'returnValues': {
+                        'addressRange': 'int'
+                    }
+                };
+
+                $http.post(generalQueryUrl, addressRangeRequestBody).then(
+                    (successResponse) => {
+                        $scope.upperAdressHardBoundary = successResponse.data[0].addressRange[0];
+                    },
+                    (errorResponse) => {
+                        console.log(errorResponse);
+                    }
+                );
             };
 
             function initializeDates(callback) {
@@ -304,7 +306,7 @@
                         console.log(successResponse);
                         $scope.eventClearanceGroupList = successResponse.data;
                         $scope.eventClearanceGroupList.unshift({'name': '-No filter-'});
-                        callback();
+                        if (callback) callback();
                     },
                     (errorResponse) => {
                         console.log(JSON.stringify(errorResponse));
@@ -314,9 +316,9 @@
 
             $scope.addressLowerBound = 0;
             $scope.addressUpperBound = 1000;
-            function initializeBlockAddressList() {
+            function initializeBlockAddressList(callback) {
                 let blockAddressRequestBody = {
-                    'query': 'select distinct address from Location where rownum > ' + $scope.addressLowerBound + ' and rownum < ' + $scope.addressUpperBound,
+                    'query': 'select * from (select distinct address, rownum rn from Location) where rn between ' + $scope.addressLowerBound + ' and ' + $scope.addressUpperBound,
                     'returnValues': {
                         'address': 'string'
                     }
@@ -326,6 +328,7 @@
                     (successResponse) => {
                         $scope.blockAddressList = successResponse.data;
                         $scope.blockAddressList.unshift({'address': '-No filter-'});
+                        if (callback) callback();
                     },
                     (errorResponse) => {
                         console.log(errorResponse);
@@ -394,6 +397,13 @@
 
 			};
 
+            $scope.updateAddressList = function() {
+                if (!$scope.addressLowerBound || $scope.addressLowerBound < 0 || $scope.addressLowerBound >= $scope.addressUpperBound) $scope.addressLowerBound = 0;
+                if (!$scope.addressUpperBound || $scope.addressUpperBound < $scope.addressLowerBound || $scope.addressUpperBound > $scope.upperAdressHardBoundary) $scope.addressUpperBound = $scope.addressLowerBound + 1;
+
+                initializeBlockAddressList();
+            }
+
             function updateFrequencyView() {
                 let clearanceGroupFilter;
                 let blockAddressFilter;
@@ -407,11 +417,11 @@
                 else blockAddressFilter = '';
 
                 let query = '' + 
-                'select event_code, event_clearance_description, count(event_code) as num ' + 
-                'from Incident, Type, CrimeTime ' + 
-                'where event_code = event_clearance_code and general_offense_number = offense_number ' + 
-                      'and crime_date > To_Date(\'' + $scope.frequencyView.fromDate.toISOString().split('T')[0] + '\', \'YYYY-MM-DD\') ' + 
-                      'and crime_date < To_Date(\'' + $scope.frequencyView.toDate.toISOString().split('T')[0] + '\',\'YYYY-MM-DD\') ' + 
+                'select event_code, event_clearance_description, count(event_code) as num\n' + 
+                'from Incident, Type, CrimeTime\n' + 
+                'where event_code = event_clearance_code and general_offense_number = offense_number\n' + 
+                      'and crime_date > To_Date(\'' + $scope.frequencyView.fromDate.toISOString().split('T')[0] + '\', \'YYYY-MM-DD\')\n' + 
+                      'and crime_date < To_Date(\'' + $scope.frequencyView.toDate.toISOString().split('T')[0] + '\',\'YYYY-MM-DD\')\n' + 
                        clearanceGroupFilter + blockAddressFilter +
                 'group by event_code, event_clearance_description order by count(event_code) ' + $scope.frequencyView.sortOrder;
 
