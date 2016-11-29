@@ -81,9 +81,15 @@ public final class RoutingUtilities
 				finalResultString += myJsonObject.toString() + ",";
 			}
 			
+
 			int indexOfLastComma = finalResultString.lastIndexOf(",");
 
-			finalResultString = finalResultString.substring(0, indexOfLastComma);
+			try {
+				finalResultString = finalResultString.substring(0, indexOfLastComma);
+			} catch (IndexOutOfBoundsException exception) {
+				return "[]";
+			}
+			
 			finalResultString += "]";	
 			
 			return finalResultString;
@@ -123,7 +129,7 @@ public final class RoutingUtilities
 				// Choose an appropriate handler for the type of database query. 
 				String queryType = queryKeysAndValues.get(i + 1);
 			    if (queryType.equals("generalQuery")) {
-					System.out.println("\nGeneral query request.");
+			    	System.out.println();
 					return handleGeneralQuery(baseRequest, request, response);
 				}
 				else {
