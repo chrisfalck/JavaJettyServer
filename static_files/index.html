@@ -23,14 +23,14 @@
         .center {
             text-align: center;
         }
-        
+
         .area1,
         .area2 {
             display: flex;
             box-sizing: border-box;
             min-width: 100%;
         }
-        
+
         .area1 {
             height: 10%;
             max-height: 10%;
@@ -40,7 +40,7 @@
             border: 1px darkblue;
             border-style: none none solid none;
         }
-        
+
         .area2 {
             height: 90%;
             max-height: 90%;
@@ -48,28 +48,28 @@
             min-width: 100%;
             flex: 1 1 100%;
         }
-        
+
         .left {
             text-align: left;
             margin: 2px 10px;
             display: inline;
         }
-        
+
         .right {
             text-align: right;
             margin: 2px 10px;
             display: inline;
         }
-        
+
         .margin-left {
             margin-left: 50px;
         }
-        
+
         .data {
             margin-top: 100px;
             margin-left: 50px;
         }
-        
+
         .table-data td {
             text-align: center;
         }
@@ -208,7 +208,7 @@
             }
             else {
                 serverBaseUrl = 'http://localhost:9090/?password=' + getParameterByName('password');
-            } 
+            }
 
             let generalQueryUrl = serverBaseUrl + '&databaseQuery=generalQuery';
 
@@ -280,7 +280,7 @@
                             $scope[dateModel].fromDate = defaultFromDate;
                         });
                         getMaxDate();
-                    }, 
+                    },
                     (errorResponse) => {
                         console.log('Error: ' + JSON.stringify(errorResponse));
                     }
@@ -331,27 +331,30 @@
             function initializeBlockAddressList(callback) {
                 let clearanceGroupFilter;
                 let blockAddressFilter;
-                
-                // This will be true if the field exists and is not the string '-No filter-'. 
-                // typeOf returns 'object' if the selection is valid for the query.                                    
+
+                // This will be true if the field exists and is not the string '-No filter-'.
+                // typeOf returns 'object' if the selection is valid for the query.
                 if ($scope.selectedClearanceGroup && typeof($scope.selectedClearanceGroup.name) !== 'string') clearanceGroupFilter = ' and group_name=\'' + $scope.selectedClearanceGroup.name[0] + '\' ';
                 else clearanceGroupFilter = '';
 
                 if ($scope.selectedBlockAddress && typeof($scope.selectedBlockAddress.addr) !== 'string') blockAddressFilter = ' and addr=\'' + $scope.selectedBlockAddress.addr[0] + '\' ';
                 else blockAddressFilter = '';
 
-                let query = '' + 
-                'select * from\n' + 
-                        '(\n' +
-                            '\tselect distinct addr, count(addr) as num\n' + 
-                            '\tfrom Incident, Type, CrimeTime\n' +
-                            '\twhere event_code = event_clearance_code and general_offense_number = offense_number\n' + 
-                                '\t\tand crime_date > To_Date(\'' + $scope.frequencyView.fromDate.toISOString().split('T')[0] + '\', \'YYYY-MM-DD\')\n' + 
-                                '\t\tand crime_date < To_Date(\'' + $scope.frequencyView.toDate.toISOString().split('T')[0] + '\',\'YYYY-MM-DD\')\n' + 
-                                '\t\t' + clearanceGroupFilter + blockAddressFilter + ' and rownum < ' + $scope.addressUpperBound + ' ' +
-                            '\tgroup by addr\norder by count(addr) asc\n' +
-                        ')\n' + 
-                'where rownum > ' + $scope.addressLowerBound;
+                let query = '' +
+                    'select * from\n' +
+                    '(\n' +
+                        '\tselect t.*, rownum as rn from\n' +
+                        '\t(\n' +
+                            '\t\tselect distinct addr, count(addr) as num\n' +
+                            '\t\tfrom Incident, Type, CrimeTime\n' +
+                            '\t\twhere event_code = event_clearance_code and general_offense_number = offense_number and addr != \'NULL\'\n' +
+                                '\t\t\tand crime_date > To_Date(\'' + $scope.frequencyView.fromDate.toISOString().split('T')[0] + '\', \'YYYY-MM-DD\')\n' +
+                                '\t\t\tand crime_date < To_Date(\'' + $scope.frequencyView.toDate.toISOString().split('T')[0] + '\',\'YYYY-MM-DD\')\n' +
+                                '\t\t\t' + clearanceGroupFilter + blockAddressFilter +
+                            '\t\tgroup by addr order by count(addr) desc\n' +
+                        '\t) t\n' +
+                    ')\n' +
+                    'where rn < ' + $scope.addressUpperBound + ' and rn > ' + $scope.addressLowerBound;
 
                 let blockAddressRequestBody = {
                     'query': query,
@@ -372,7 +375,7 @@
                     }
                 );
             };
-            
+
             // Values for the state of the frequency view.
 			$scope.frequencyView = {
 				sortOrder: 'desc',
@@ -381,7 +384,7 @@
                 eventClearanceGroup: null,
 				location: null
 			};
-			
+
 			// Values for the state of the specific view.
 			$scope.specificView = {
 				fromDate: null,
@@ -400,7 +403,7 @@
 						return false;
 					}
 					return true;
-				} 
+				}
                 else if($scope.selectedView === $scope.viewOptions[1]) {
 					if($scope.specificView.fromDate === null || $scope.specificView.toDate === null) {
 						return false;
@@ -429,7 +432,7 @@
 					return;
 				}
 
-                if ($scope.selectedView === $scope.viewOptions[0]) updateFrequencyView();				
+                if ($scope.selectedView === $scope.viewOptions[0]) updateFrequencyView();
                 if ($scope.selectedView === $scope.viewOptions[1]) updateSpecificCrimeView();
 
 			};
@@ -444,21 +447,21 @@
             function updateFrequencyView() {
                 let clearanceGroupFilter;
                 let blockAddressFilter;
-                
-                // This will be true if the field exists and is not the string '-No filter-'. 
-                // typeOf returns 'object' if the selection is valid for the query.                                    
+
+                // This will be true if the field exists and is not the string '-No filter-'.
+                // typeOf returns 'object' if the selection is valid for the query.
                 if ($scope.selectedClearanceGroup && typeof($scope.selectedClearanceGroup.name) !== 'string') clearanceGroupFilter = ' and group_name=\'' + $scope.selectedClearanceGroup.name[0] + '\' ';
                 else clearanceGroupFilter = '';
 
                 if ($scope.selectedBlockAddress && typeof($scope.selectedBlockAddress.addr) !== 'string') blockAddressFilter = ' and addr=\'' + $scope.selectedBlockAddress.addr[0] + '\' ';
                 else blockAddressFilter = '';
 
-                let query = '' + 
-                'select event_code, event_clearance_description, count(event_code) as num\n' + 
-                'from Incident, Type, CrimeTime\n' + 
-                'where event_code = event_clearance_code and general_offense_number = offense_number\n' + 
-                      'and crime_date > To_Date(\'' + $scope.frequencyView.fromDate.toISOString().split('T')[0] + '\', \'YYYY-MM-DD\')\n' + 
-                      'and crime_date < To_Date(\'' + $scope.frequencyView.toDate.toISOString().split('T')[0] + '\',\'YYYY-MM-DD\')\n' + 
+                let query = '' +
+                'select event_code, event_clearance_description, count(event_code) as num\n' +
+                'from Incident, Type, CrimeTime\n' +
+                'where event_code = event_clearance_code and general_offense_number = offense_number\n' +
+                      'and crime_date > To_Date(\'' + $scope.frequencyView.fromDate.toISOString().split('T')[0] + '\', \'YYYY-MM-DD\')\n' +
+                      'and crime_date < To_Date(\'' + $scope.frequencyView.toDate.toISOString().split('T')[0] + '\',\'YYYY-MM-DD\')\n' +
                        clearanceGroupFilter + blockAddressFilter +
                 'group by event_code, event_clearance_description order by count(event_code) ' + $scope.frequencyView.sortOrder;
 
@@ -483,12 +486,12 @@
             };
 
             function updateSpecificCrimeView() {
-                let query = '' + 
-                'select * from Incident, CrimeTime ' + 
-                'where general_offense_number = offense_number ' + 
-                      'and crime_date > To_Date(\'' + $scope.specificView.fromDate.toISOString().split('T')[0] + '\', \'YYYY-MM-DD\') ' + 
-                      'and crime_date < To_Date(\'' + $scope.specificView.toDate.toISOString().split('T')[0] + '\',\'YYYY-MM-DD\') ' + 
-                      'and rownum < 1000'; 
+                let query = '' +
+                'select * from Incident, CrimeTime ' +
+                'where general_offense_number = offense_number ' +
+                      'and crime_date > To_Date(\'' + $scope.specificView.fromDate.toISOString().split('T')[0] + '\', \'YYYY-MM-DD\') ' +
+                      'and crime_date < To_Date(\'' + $scope.specificView.toDate.toISOString().split('T')[0] + '\',\'YYYY-MM-DD\') ' +
+                      'and rownum < 1000';
 
                 let specificCrimeRequestBody = {
                     'query': query,
