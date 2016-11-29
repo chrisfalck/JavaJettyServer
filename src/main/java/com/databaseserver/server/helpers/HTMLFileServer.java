@@ -12,8 +12,7 @@ public final class HTMLFileServer
 	public static String prepareResponseString(String fileName) throws IOException 
 	{
 		// Turn the path string into a URI that can be passed to the Files class. 
-		// String systemDependentPathToStaticFiles = "/home/ryan/git/JavaJettyServer/static_files/" + fileName;
-		Path filePath = Paths.get("C:", "Users", "Chris", "git", "JavaJettyServer", "static_files", fileName);
+		Path filePath = Paths.get(Paths.get("").toAbsolutePath().toString(), "static_files", fileName);
 		List<String> fileLines = Files.readAllLines(filePath);
 		
 		// Hold the final string to return.
