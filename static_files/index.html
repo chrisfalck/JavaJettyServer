@@ -9,6 +9,7 @@
 <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-animate.min.js"></script>
 <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-aria.min.js"></script>
 <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-messages.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.6/Chart.js"></script>
 
 <!-- Angular Material Library -->
 <script src="http://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.js"></script>
@@ -28,7 +29,6 @@
         .area2 {
             display: flex;
             box-sizing: border-box;
-            min-width: 100%;
         }
         
         .area1 {
@@ -44,9 +44,6 @@
         .area2 {
             height: 90%;
             max-height: 90%;
-            width: 100%;
-            min-width: 100%;
-            flex: 1 1 100%;
         }
         
         .left {
@@ -83,51 +80,52 @@
         <h3 class="center">UF Intro to Databases Fall 2016: Seattle Crime Database Analysis</h3>
     </md-toolbar>
 
+    <div class="area1">
+        <!-- Make sure to wrap normal content in an md-content tag! -->
+        <md-content class="margin-left">
+            <br>
+            <span>Analyze data by:</span>
+            <select ng-options="viewType for viewType in viewOptions" ng-model="selectedView" ng-change="applyViewChange()">
+            </select>
+        </md-content>
+    </div>
+
     <div flex layout="row">
         <div layout="column" flex>
-            <div class="area1">
-                <!-- Make sure to wrap normal content in an md-content tag! -->
-                <md-content class="margin-left">
-                    <br>
-                    <span>Analyze data by:</span>
-                    <select ng-options="viewType for viewType in viewOptions" ng-model="selectedView" ng-change="applyViewChange()">
-					</select>
-                </md-content>
-            </div>
             <div class="area2">
 
                 <!-- View crime statistics by frequency view. -->
-                <div ng-show="selectedView === 'Frequency'" style="width: 60%;">
-                    <md-content class="margin-left" style="width: 1000px; overflow: visible;">
+                <div ng-show="selectedView === 'Frequency'">
+                    <md-content class="margin-left" style="overflow: visible;">
                         <h3>
                             Sorting Options
                             <md-progress-circular ng-show="loadingSomething" style="display: inline;" md-mode="indeterminate" md-diameter="20px"></md-progress-circular>
                         </h3>
-                        <div style="border-style: solid; border-width: 1px; border-color: lightgrey; padding: 5px;">
-                            <form>
-                                From:
-                                <input id="frequencyFromDate" type="date" ng-model="frequencyView.fromDate"> To:
-                                <input id="frequencyToDate" type="date" ng-model="frequencyView.toDate">
-                            </form>
-                            <hr>
+                            <div style="border-style: solid; border-width: 1px; border-color: lightgrey; padding: 5px;">
+                                <form>
+                                    From:
+                                    <input id="frequencyFromDate" type="date" ng-model="frequencyView.fromDate"> To:
+                                    <input id="frequencyToDate" type="date" ng-model="frequencyView.toDate">
+                                </form>
+                                <hr>
                             <span>Filter by General Incident Group:</span>
-                            <select ng-options="eventGroup as eventGroup.name for eventGroup in eventClearanceGroupList" ng-model="selectedClearanceGroup"></select>
-                            <br>
-                            <hr>
+                                <select ng-options="eventGroup as eventGroup.name for eventGroup in eventClearanceGroupList" ng-model="selectedClearanceGroup"></select>
+                                <br>
+                                <hr>
                             <div>Filter Dropdown: <input ng-model="selectedBlockAddressFilter"></div>
                             <br>
-                            <span>Filter by Block Address:</span>
+                                <span>Filter by Block Address:</span>
                             <select ng-options="location as location.addr for location in blockAddressList | filter:selectedBlockAddressFilter" ng-model="selectedBlockAddress"></select>
-                            <br>
-                            <br>
-                            <span>There are {{upperAdressHardBoundary}} unique addresses in the database. Select a subset of them to filter by.</span>
-                            <br>
-                            <span>Range:<input ng-model="addressLowerBound"/> to <input ng-model="addressUpperBound"/><button ng-click="updateAddressList()">Update Address List</button></span>
-                            <hr>
-                            <md-radio-group ng-model="frequencyView.sortOrder" class="left">
-                                <md-radio-button value="desc">Most Frequent First</md-radio-button>
-                                <md-radio-button value="asc">Least Frequent First</md-radio-button>
-                            </md-radio-group>
+                                <br>
+                                <br>
+                                <span>There are {{upperAdressHardBoundary}} unique addresses in the database. Select a subset of them to filter by.</span>
+                                <br>
+                                <span>Range:<input ng-model="addressLowerBound"/> to <input ng-model="addressUpperBound"/><button ng-click="updateAddressList()">Update Address List</button></span>
+                                <hr>
+                                <md-radio-group ng-model="frequencyView.sortOrder" class="left">
+                                    <md-radio-button value="desc">Most Frequent First</md-radio-button>
+                                    <md-radio-button value="asc">Least Frequent First</md-radio-button>
+                                </md-radio-group>
                             <hr>
                             <md-button class="md-raised md-primary" ng-click="applyChanges()">Apply Changes</md-button>
                         </div>
@@ -148,9 +146,9 @@
                                 </thead>
                                 <tbody>
                                     <tr ng-repeat="entry in frequencyData" class="table-data" style="padding: 5px;">
-                                        <td>{{entry.event_code[0]}}</td>
-                                        <td>{{entry.event_clearance_description[0]}}</td>
-                                        <td>{{entry.num[0]}}</td>
+                                        <td style="max-width: 10px;">{{entry.event_code[0]}}</td>
+                                        <td style="max-width: 100px;">{{entry.event_clearance_description[0]}}</td>
+                                        <td style="max-width: 10px;">{{entry.num[0]}}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -234,6 +232,35 @@
                 <br>
             </div>
         </div>
+        <div ng-show="selectedView === 'Frequency'" style="border-style: solid; border-width: 1px; border-color: lightgrey;">
+            <div>
+                <md-button class="md-raised md-primary" ng-click="displayGraph()">Display Graph</md-button>
+                <select name="repeatSelect" id="repeatSelect" ng-model="numberOfDays">
+                    <option>1</option>
+                    <option>2</option>
+                    <option>3</option>
+                    <option>4</option>
+                    <option>5</option>
+                    <option>6</option>
+                    <option>7</option>
+                </select>
+            </div>
+            <div>
+                <h3 style="display: inline-block;">Begin Date: </h3>
+                <p style="display: inline-block;">{{frequencyView.fromDate}}</p>
+            </div>
+            <div>
+                <h3 style="display: inline-block">Event Clearance Group: </h3>
+                <p style="display: inline-block">{{selectedClearanceGroup}}</p>
+            </div>
+            <div>
+                <h3 style="display: inline-block;">Block Address: </h3>
+                <p style="display: inline-block;">{{selectedBlockAddress}}</p>
+            </div>
+            <div>
+                <canvas ng-if="displayGraph" id="graph" width="500" height="400"></canvas>
+            </div>
+        </div>
     </div>
 
 
@@ -246,7 +273,6 @@
     <script>
 		var app = angular.module('databasesApp', ['ngMaterial']);
 		app.controller('IndexController', ['$scope', '$http', function($scope, $http) {
-
             let currentUrl = window.location.href;
             let ip, port, serverBaseUrl;
 
@@ -598,6 +624,11 @@
                     (successResponse) => {
                         $scope.loadingSomething = false;
                         $scope.frequencyData = successResponse.data;
+
+                        $scope.total = 0;
+                        for(let i in $scope.frequencyData) {
+                            $scope.total += $scope.frequencyData[i].num[0];
+                        }
                     },
                     (errorResponse) => {
                         console.log(errorResponse);
@@ -643,6 +674,108 @@
                     }
                 );
             };
+
+            $scope.displayGraph = function() {
+                let upperBound = new Date($scope.frequencyView.fromDate);
+                upperBound.setDate(upperBound.getDate() + parseInt($scope.numberOfDays - 1));
+
+                let clearanceGroupFilter;
+                let blockAddressFilter;
+
+                // This will be true if the field exists and is not the string '-No filter-'.
+                // typeOf returns 'object' if the selection is valid for the query.
+                if ($scope.selectedClearanceGroup && typeof($scope.selectedClearanceGroup.name) !== 'string') clearanceGroupFilter = ' and group_name=\'' + $scope.selectedClearanceGroup.name[0] + '\' ';
+                else clearanceGroupFilter = '';
+
+                if ($scope.selectedBlockAddress && typeof($scope.selectedBlockAddress.addr) !== 'string') blockAddressFilter = ' and addr=\'' + $scope.selectedBlockAddress.addr[0] + '\' ';
+                else blockAddressFilter = '';
+
+                let query = '' +
+                    'select crime_date, count(*) as num from Incident, CrimeTime \n' +
+                    'where general_offense_number = offense_number \n' +
+                        '\tand crime_date >= To_Date(\'' + $scope.frequencyView.fromDate.toISOString().split('T')[0] + '\', \'YYYY-MM-DD\') \n' +
+                        '\tand crime_date <= To_Date(\'' + upperBound.toISOString().split('T')[0] + '\', \'YYYY-MM-DD\') \n' +
+                        clearanceGroupFilter + blockAddressFilter +
+                    'group by crime_date';
+
+                let graphRequestBody = {
+                    'query': query,
+                    'returnValues': {
+                        'crime_date': 'date',
+                        'num': 'int'
+                    }
+                }
+
+                $http.post(generalQueryUrl, graphRequestBody).then(
+                    (successResponse) => {
+                        $scope.graphData = successResponse.data;
+
+                        let labels = getLabels();
+                        let data = getData();
+
+                        var ctx = document.getElementById("graph");
+                        var myChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: 'YYYY-MM-DD',
+                                    data: data,
+                                    backgroundColor: [
+                                        'rgba(255, 99, 132, 0.2)',
+                                        'rgba(54, 162, 235, 0.2)',
+                                        'rgba(255, 206, 86, 0.2)',
+                                        'rgba(75, 192, 192, 0.2)',
+                                        'rgba(153, 102, 255, 0.2)',
+                                        'rgba(255, 159, 64, 0.2)'
+                                    ],
+                                    borderColor: [
+                                        'rgba(255,99,132,1)',
+                                        'rgba(54, 162, 235, 1)',
+                                        'rgba(255, 206, 86, 1)',
+                                        'rgba(75, 192, 192, 1)',
+                                        'rgba(153, 102, 255, 1)',
+                                        'rgba(255, 159, 64, 1)'
+                                    ],
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                scales: {
+                                    yAxes: [{
+                                        ticks: {
+                                            beginAtZero:true
+                                        }
+                                    }]
+                                }
+                            }
+                        });
+
+                        $scope.displayGraph = true;
+                    },
+                    (errorResponse) => {
+                        console.log(errorResponse);
+                    }
+                );
+            };
+
+            // Returns the labels to be used in the frequency graph.
+            function getLabels() {
+                let labels = [];
+                for(let i in $scope.graphData) {
+                    labels.push($scope.graphData[i].crime_date);
+                }
+                return labels;
+            }
+
+            // Returns the data to be used in the frequency graph.
+            function getData() {
+                let data = [];
+                for(let i in $scope.graphData) {
+                    data.push($scope.graphData[i].num[0]);
+                }
+                return data;
+            }
 
 		}]);
 	</script>
