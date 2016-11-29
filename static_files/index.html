@@ -113,7 +113,7 @@
                             <br>
                             <hr>
                             <span>Filter by Block Address:</span>
-                            <select ng-options="location as location.address for location in blockAddressList" ng-model="selectedBlockAddress"></select>
+                            <select ng-options="location as location.addr for location in blockAddressList" ng-model="selectedBlockAddress"></select>
                             <br>
                             <br>
                             <span>There are {{upperAdressHardBoundary}} unique addresses in the database. Select a subset of them to filter by.</span>
@@ -198,8 +198,20 @@
 		var app = angular.module('databasesApp', ['ngMaterial']);
 		app.controller('IndexController', ['$scope', '$http', function($scope, $http) {
 
-            let serverBaseUrl = 'http://localhost:9090/?password=' + getParameterByName('password');
+            let currentUrl = window.location.href;
+            let ip, port, serverBaseUrl;
+
+            if (currentUrl.indexOf('localhost') === -1) {
+                ip = currentUrl.split('//')[1].split(':')[0];
+                port = currentUrl.split('//')[1].split(':')[1].split('/')[0];
+                serverBaseUrl = 'http://' + ip + ':' + port + '/?password=' + getParameterByName('password');
+            }
+            else {
+                serverBaseUrl = 'http://localhost:9090/?password=' + getParameterByName('password');
+            } 
+
             let generalQueryUrl = serverBaseUrl + '&databaseQuery=generalQuery';
+
 
 			// The two types of views we offer.
 			$scope.viewOptions = ['Frequency', 'Specific Crime'];
@@ -317,17 +329,42 @@
             $scope.addressLowerBound = 0;
             $scope.addressUpperBound = 1000;
             function initializeBlockAddressList(callback) {
+                let clearanceGroupFilter;
+                let blockAddressFilter;
+                
+                // This will be true if the field exists and is not the string '-No filter-'. 
+                // typeOf returns 'object' if the selection is valid for the query.                                    
+                if ($scope.selectedClearanceGroup && typeof($scope.selectedClearanceGroup.name) !== 'string') clearanceGroupFilter = ' and group_name=\'' + $scope.selectedClearanceGroup.name[0] + '\' ';
+                else clearanceGroupFilter = '';
+
+                if ($scope.selectedBlockAddress && typeof($scope.selectedBlockAddress.addr) !== 'string') blockAddressFilter = ' and addr=\'' + $scope.selectedBlockAddress.addr[0] + '\' ';
+                else blockAddressFilter = '';
+
+                let query = '' + 
+                'select * from\n' + 
+                        '(\n' +
+                            '\tselect distinct addr, count(addr) as num\n' + 
+                            '\tfrom Incident, Type, CrimeTime\n' +
+                            '\twhere event_code = event_clearance_code and general_offense_number = offense_number\n' + 
+                                '\t\tand crime_date > To_Date(\'' + $scope.frequencyView.fromDate.toISOString().split('T')[0] + '\', \'YYYY-MM-DD\')\n' + 
+                                '\t\tand crime_date < To_Date(\'' + $scope.frequencyView.toDate.toISOString().split('T')[0] + '\',\'YYYY-MM-DD\')\n' + 
+                                '\t\t' + clearanceGroupFilter + blockAddressFilter + ' and rownum < ' + $scope.addressUpperBound + ' ' +
+                            '\tgroup by addr\norder by count(addr) asc\n' +
+                        ')\n' + 
+                'where rownum > ' + $scope.addressLowerBound;
+
                 let blockAddressRequestBody = {
-                    'query': 'select * from (select distinct address, rownum rn from Location) where rn between ' + $scope.addressLowerBound + ' and ' + $scope.addressUpperBound,
+                    'query': query,
                     'returnValues': {
-                        'address': 'string'
+                        'addr': 'string'
                     }
                 }
 
                 $http.post(generalQueryUrl, blockAddressRequestBody).then(
                     (successResponse) => {
+                        console.log(successResponse);
                         $scope.blockAddressList = successResponse.data;
-                        $scope.blockAddressList.unshift({'address': '-No filter-'});
+                        $scope.blockAddressList.unshift({'addr': '-No filter-'});
                         if (callback) callback();
                     },
                     (errorResponse) => {
@@ -413,7 +450,7 @@
                 if ($scope.selectedClearanceGroup && typeof($scope.selectedClearanceGroup.name) !== 'string') clearanceGroupFilter = ' and group_name=\'' + $scope.selectedClearanceGroup.name[0] + '\' ';
                 else clearanceGroupFilter = '';
 
-                if ($scope.selectedBlockAddress && typeof($scope.selectedBlockAddress.address) !== 'string') blockAddressFilter = ' and addr=\'' + $scope.selectedBlockAddress.address[0] + '\' ';
+                if ($scope.selectedBlockAddress && typeof($scope.selectedBlockAddress.addr) !== 'string') blockAddressFilter = ' and addr=\'' + $scope.selectedBlockAddress.addr[0] + '\' ';
                 else blockAddressFilter = '';
 
                 let query = '' + 
