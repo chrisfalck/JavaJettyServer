@@ -24,13 +24,13 @@
         .center {
             text-align: center;
         }
-        
+
         .area1,
         .area2 {
             display: flex;
             box-sizing: border-box;
         }
-        
+
         .area1 {
             height: 10%;
             max-height: 10%;
@@ -40,35 +40,42 @@
             border: 1px darkblue;
             border-style: none none solid none;
         }
-        
+
         .area2 {
             height: 90%;
             max-height: 90%;
         }
-        
+
         .left {
             text-align: left;
             margin: 2px 10px;
             display: inline;
         }
-        
+
         .right {
             text-align: right;
             margin: 2px 10px;
             display: inline;
         }
-        
+
         .margin-left {
             margin-left: 50px;
         }
-        
+
         .data {
             margin-top: 100px;
             margin-left: 50px;
         }
-        
+
         .table-data td {
             text-align: center;
+        }
+
+        .graph-side {
+            border-style: solid;
+            border-width: 1px;
+            border-color: lightgrey;
+            width: 50%;
         }
     </style>
 </head>
@@ -136,7 +143,7 @@
                             <table border="1" style="text-align: center; width: 100%">
                                 <thead>
                                     <tr>
-                                        Total Results: {{frequencyData.length}}
+                                        Total Incidents: {{total}}
                                     </tr>
                                     <tr>
                                         <th>Event Clearance Code</th>
@@ -232,33 +239,36 @@
                 <br>
             </div>
         </div>
-        <div ng-show="selectedView === 'Frequency'" style="border-style: solid; border-width: 1px; border-color: lightgrey;">
-            <div>
+        <div ng-show="selectedView === 'Frequency'" class="graph-side">
+            <div layout="row">
                 <md-button class="md-raised md-primary" ng-click="displayGraph()">Display Graph</md-button>
-                <select name="repeatSelect" id="repeatSelect" ng-model="numberOfDays">
+                <h3 style="margin-right: 10px;"> Select number of days to view:</h3>
+                <select style="margin-top: 20px; margin-bottom: 20px;"
+                        name="repeatSelect" id="repeatSelect"
+                        ng-model="numberOfDays">
                     <option>1</option>
                     <option>2</option>
                     <option>3</option>
                     <option>4</option>
                     <option>5</option>
                     <option>6</option>
-                    <option>7</option>
+                    <option selected>7</option>
                 </select>
             </div>
             <div>
                 <h3 style="display: inline-block;">Begin Date: </h3>
-                <p style="display: inline-block;">{{frequencyView.fromDate}}</p>
+                <p style="display: inline-block;">{{cleanDate(frequencyView.fromDate)}}</p>
             </div>
             <div>
-                <h3 style="display: inline-block">Event Clearance Group: </h3>
-                <p style="display: inline-block">{{selectedClearanceGroup}}</p>
+                <h3 style="display: inline-block">General Incident Group: </h3>
+                <p style="display: inline-block">{{existsClearanceGroup(selectedClearanceGroup)}}</p>
             </div>
             <div>
                 <h3 style="display: inline-block;">Block Address: </h3>
-                <p style="display: inline-block;">{{selectedBlockAddress}}</p>
+                <p style="display: inline-block;">{{existsBlockAddress(selectedBlockAddress)}}</p>
             </div>
             <div>
-                <canvas ng-if="displayGraph" id="graph" width="500" height="400"></canvas>
+                <canvas id="graph" width="500" height="400"></canvas>
             </div>
         </div>
     </div>
@@ -431,7 +441,7 @@
                             '\t\twhere event_code = event_clearance_code and general_offense_number = offense_number and addr != \'NULL\'\n' +
                                 '\t\t\tand crime_date > To_Date(\'' + $scope.frequencyView.fromDate.toISOString().split('T')[0] + '\', \'YYYY-MM-DD\')\n' +
                                 '\t\t\tand crime_date < To_Date(\'' + $scope.frequencyView.toDate.toISOString().split('T')[0] + '\',\'YYYY-MM-DD\')\n' +
-                                '\t\t\t' + clearanceGroupFilter + blockAddressFilter + '\n' + 
+                                '\t\t\t' + clearanceGroupFilter + blockAddressFilter + '\n' +
                             '\t\tgroup by addr order by count(addr) desc\n' +
                         '\t) t\n' +
                     ')\n' +
@@ -448,7 +458,7 @@
                 $http.post(generalQueryUrl, blockAddressRequestBody).then(
                     (successResponse) => {
                         $scope.loadingSomething = false;
-                        $scope.loadingBlockAddressList = false; 
+                        $scope.loadingBlockAddressList = false;
                         $scope.blockAddressList = successResponse.data;
                         $scope.blockAddressList.unshift({'addr': '-No filter-'});
                         if (callback) callback();
@@ -531,9 +541,9 @@
                 if (!newValue) return;
                 let clearanceGroupToFilterBy = newValue.name[0];
                 if (!$scope.selectedView === $scope.viewOptions[1] || clearanceGroupToFilterBy === '-') return;
-                    let query = '' + 
-                    '\nselect distinct event_clearance_description ' + 
-                    '\nfrom Type ' + 
+                    let query = '' +
+                    '\nselect distinct event_clearance_description ' +
+                    '\nfrom Type ' +
                     '\nwhere group_name = \'' + clearanceGroupToFilterBy + '\'';
 
                     let clearanceDescriptionRequestBody = {
@@ -562,10 +572,10 @@
                 let clearanceDescriptionToFilterBy = newValue.event_clearance_description[0];
                 if (!$scope.selectedView === $scope.viewOptions[1] || clearanceDescriptionToFilterBy === '-') return;
 
-                let query = '' + 
-                '\nselect addr, count(addr) as addressFrequency\n' + 
-                'from Incident, Type\n' + 
-                'where event_clearance_code = event_code and event_clearance_description = \'' + clearanceDescriptionToFilterBy + '\'\n' + 
+                let query = '' +
+                '\nselect addr, count(addr) as addressFrequency\n' +
+                'from Incident, Type\n' +
+                'where event_clearance_code = event_code and event_clearance_description = \'' + clearanceDescriptionToFilterBy + '\'\n' +
                       '\tand rownum < ' + $scope.addressUpperBound + '\n' +
                 'group by addr order by count(addr) desc';
 
@@ -643,14 +653,14 @@
                 else blockAddressFilter = '';
 
                 let query = '' +
-                '\nselect event_clearance_description, addr, crime_date, time ' + 
+                '\nselect event_clearance_description, addr, crime_date, time ' +
                 '\nfrom Incident, CrimeTime, Type ' +
-                '\nwhere event_clearance_description = \'' + $scope.selectedEventClearanceDescription.event_clearance_description[0] +'\' \n\tand offense_number = general_offense_number ' + 
+                '\nwhere event_clearance_description = \'' + $scope.selectedEventClearanceDescription.event_clearance_description[0] +'\' \n\tand offense_number = general_offense_number ' +
                       '\n\tand event_code = event_clearance_code ' +
                       '\n\tand crime_date > To_Date(\'' + $scope.specificView.fromDate.toISOString().split('T')[0] + '\', \'YYYY-MM-DD\') ' +
                       '\n\tand crime_date < To_Date(\'' + $scope.specificView.toDate.toISOString().split('T')[0] + '\',\'YYYY-MM-DD\') \n\t' +
-                      blockAddressFilter + 
-                      '\n\tand rownum < ' + $scope.numberOfResultsToFetch + 
+                      blockAddressFilter +
+                      '\n\tand rownum < ' + $scope.numberOfResultsToFetch +
                       '\norder by crime_date desc, substr(time, 10, 2) desc, substr(time, 0, 8) desc';
 
                 let specificCrimeRequestBody = {
@@ -677,6 +687,7 @@
 
             $scope.displayGraph = function() {
                 let upperBound = new Date($scope.frequencyView.fromDate);
+                if(!$scope.numberOfDays) $scope.numberOfDays = 7;
                 upperBound.setDate(upperBound.getDate() + parseInt($scope.numberOfDays - 1));
 
                 let clearanceGroupFilter;
@@ -696,7 +707,7 @@
                         '\tand crime_date >= To_Date(\'' + $scope.frequencyView.fromDate.toISOString().split('T')[0] + '\', \'YYYY-MM-DD\') \n' +
                         '\tand crime_date <= To_Date(\'' + upperBound.toISOString().split('T')[0] + '\', \'YYYY-MM-DD\') \n' +
                         clearanceGroupFilter + blockAddressFilter +
-                    'group by crime_date';
+                    'group by crime_date order by crime_date';
 
                 let graphRequestBody = {
                     'query': query,
@@ -751,7 +762,6 @@
                             }
                         });
 
-                        $scope.displayGraph = true;
                     },
                     (errorResponse) => {
                         console.log(errorResponse);
@@ -775,6 +785,30 @@
                     data.push($scope.graphData[i].num[0]);
                 }
                 return data;
+            }
+
+            $scope.cleanDate = function(d) {
+                var date = new Date(d);
+                var year = date.getFullYear();
+                var month = date.getMonth() + 1;
+                var day = date.getDate();
+                return month + '-' + day + '-' + year;
+            };
+
+            $scope.existsClearanceGroup = function(clearanceGroup) {
+                if(clearanceGroup && clearanceGroup.name && clearanceGroup.name != '-No filter-') {
+                    return clearanceGroup.name[0];
+                } else {
+                    return 'No event clearance group selected';
+                }
+            };
+
+            $scope.existsBlockAddress = function(blockAddress) {
+                if(blockAddress && blockAddress.addr && blockAddress.addr != '-No filter-') {
+                    return blockAddress.addr[0];
+                } else {
+                    return 'No block address selected';
+                }
             }
 
 		}]);
